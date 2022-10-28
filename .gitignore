@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Token
+token.secret
+
+# Dogcam
+*.mkv
+
+# Video Downloader
+videos/

@@ -32,4 +32,4 @@ def get(url: str):
     video_url = result[result.index("data-src=\"") + 10:result.index(".mp4\"") + 4]
 
     # Download the video
-    return pathlib.Path(wget.download(video_url, out="videos"))
+    return pathlib.Path(wget.download(video_url, out="videos/"))
