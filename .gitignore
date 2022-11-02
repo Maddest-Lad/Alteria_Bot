@@ -136,3 +136,8 @@ token.secret
 
 # Video Downloader
 videos/
+
+# Images
+*.jpg
+*.jpeg
+*.png
