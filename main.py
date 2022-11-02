@@ -25,10 +25,11 @@ async def download(ctx, url: Option(str, "url to download")):
 @bot.slash_command(guild_ids=scope)
 async def dogcam(ctx, action:Option(str, "Start or Stop DogCam", required=True, choices=["start", "stop"])):
         if action == "start":
-            await ctx.respond(dc.start())
+            result = dc.start()
+            await ctx.respond(result)
         if action == "stop":
-            await ctx.respond(dc.stop())
-        await ctx.respond("Something Went Wrong")
+            result = dc.stop()
+            await ctx.respond(result)
 
 # Create DogCam Class
 dc = DogCam()
