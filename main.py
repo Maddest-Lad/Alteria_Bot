@@ -23,17 +23,23 @@ async def download(ctx, url: Option(str, "url to download")):
     await ctx.respond("Downloading")
     await ctx.send(file=discord.File(DL.get(url)))
 
-@bot.slash_command(guild_ids=scope)
-async def novelai(ctx, prompt_positive: Option(str, "positive prompt", required=True), seed: Option(int, "seed", required=False), nsfw: Option(bool, "allow nsfw", required=False, default=False), retry=False):
-    try:
+@bot.slash_command(guild_ids=[446862283600166927])
+async def novelai(ctx, 
+                  prompt_positive: Option(str, "positive prompt", required=True),
+                  seed: Option(int, "seed", required=False),
+                  nsfw: Option(bool, "enable nsfw", required=False, default=False),
+                  private: Option(bool, "private", required=False, default=False)
+                  ):
+        
+        # Light Generation Logic
         if not seed:
-            seed = random.randint(0, 999999999)
-        await ctx.respond(f"Prompt: {prompt_positive}, Seed: {seed}", ephemeral=False)
-        await ctx.send_followup(file=discord.File(nai.generate_image(prompt_positive, seed, nsfw)))
-    except Exception:
-        if not retry:
-            await ctx.respond("Error, Retrying", ephemeral=True)
-            novelai(ctx, prompt_positive, seed, nsfw, True)
+            seed = random.randint(0, 999999999)            
+
+        # Let User Know We're Working On It
+        await ctx.response.defer(ephemeral=True)
+
+        await ctx.send_followup(content = f"Prompt: {prompt_positive}, Seed: {seed}",
+            file=discord.File(nai.generate_image(prompt_positive, seed, nsfw)))
         
 
 # Token Don't Share

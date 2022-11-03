@@ -5,18 +5,14 @@ import io
 from PIL import Image
 from time import sleep
 
-class NovelAi:
+class NovelAi:      
  
     def generate_image(self, prompt_positive, seed, nsfw):
         
-        
         headers = {
             'Host': 'novel.local',
-            # 'Content-Length': '370',
             'Authorization': 'Bearer',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.63 Safari/537.36',
-            # Already added when you pass json=
-            # 'Content-Type': 'application/json',
             'Accept': '*/*',
             'Origin': 'http://novel.local',
             # 'Accept-Encoding': 'gzip, deflate',
