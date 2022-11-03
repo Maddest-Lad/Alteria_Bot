@@ -72,6 +72,12 @@ async def generate_image(ctx, prompt, negate, orientation, steps, resolution, pr
     if negate:
         uc += ", " + negate
     
+    # Fucking Steps
+    if steps < 1:
+        steps = 1
+    elif steps > 50:
+        steps = 50
+    
     json_data = {
         'prompt': 'masterpiece, best quality,' + prompt,
         'width': width,
