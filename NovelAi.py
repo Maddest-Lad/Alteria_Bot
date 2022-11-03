@@ -6,11 +6,14 @@ from timeit import default_timer as timer
 import discord
 
 headers = {
-    'Host': 'novel.local',
+    'Host': '192.168.50.11',
+    # 'Content-Length': '332',
     'Authorization': 'Bearer',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.63 Safari/537.36',
+    # Already added when you pass json=
+    # 'Content-Type': 'application/json',
     'Accept': '*/*',
-    'Origin': 'http://novel.local',
+    'Origin': 'http://192.168.50.11',
     # 'Accept-Encoding': 'gzip, deflate',
     'Accept-Language': 'en-US,en;q=0.9',
     'Connection': 'close',
@@ -20,26 +23,30 @@ low_quality = "lowres, text, cropped, worst quality, low quality, normal quality
 
 async def generate_image(ctx, prompt, negate, orientation, steps, resolution, prompt_obediance, filter_out, seed):
     
-    # Process Orientation
-    match orientation:
-        case "square":
-            height_mult = 0
-            width_mult = 0
-        case "portrait":
-            height_mult = 1
-            width_mult = 0
-        case "landscape":
-            height_mult = 0
-            width_mult = 1
-    
-    # Resolution
+
+    # Resolution & Orientation
     match resolution:
         case "normal":
-            height = 512 + (256 * height_mult)
-            width = 512  + (256 * width_mult) 
+            if orientation == "portrait":
+                height = 768
+                width = 512
+            elif orientation == "landscape":
+                height = 512
+                width = 768    
+            else:
+                height = 512
+                width = 512  
+                
         case "high":
-            height = 512 + (256 * (height_mult + 1))
-            width = 512  + (256 * (width_mult + 1))  
+            if orientation == "portrait":
+                height = 1024
+                width = 512
+            elif orientation == "landscape":
+                height = 512
+                width = 1024    
+            else:
+                height = 1024
+                width = 1024
     
     # Scale Level
     match prompt_obediance:
@@ -81,20 +88,29 @@ async def generate_image(ctx, prompt, negate, orientation, steps, resolution, pr
     # Start Counting Time
     start = timer()
     
-    # Send Request
-    async with aiohttp.ClientSession() as session:
-        async with session.post('http://192.168.50.11/generate-stream', headers=headers, json=json_data) as response:
-            
-            raw = await response.text()
-            data = raw[raw.find("data")+5:]
+    try:
+        # Send Request
+        async with aiohttp.ClientSession() as session:
+            async with session.post('http://192.168.50.11/generate-stream', headers=headers, json=json_data) as response:
                 
-            # Generate Random Filename
-            path = "Images/" + str(uuid.uuid4()) + ".png"
-            
-            with open(path, "wb") as f:
-                f.write(base64.b64decode(data))
-            
+                # Get Reason For Failure if It's Returned By Server                
+                try:
+                    raw = await response.text()
+                    data = raw[raw.find("data")+5:]
+                    
+                    # Generate Random Filename
+                    path = "Images/" + str(uuid.uuid4()) + ".png"
+                    
+                    with open(path, "wb") as f:
+                        f.write(base64.b64decode(data))
                 
-            # Respond With Input Parameters Included
-            await ctx.respond(content=f"**Image Generated In**: {round(timer() - start, 2)} Seconds \n**Prompt**: {prompt} \n**Negate**: {negate} \n**Steps**: {steps} \n**Dims**: {width}x{height} \n**Prompt Obediance**: {scale} \n**Seed**: {seed}", file=discord.File(path))
+                
+                    # Respond With Input Parameters Included
+                    await ctx.respond(content=f"**Image Generated In**: {round(timer() - start, 2)} Seconds \n**Prompt**: {prompt} \n**Negate**: {negate} \n**Steps**: {steps} \n**Dims**: {width}x{height} \n**Prompt Obediance**: {scale} \n**Seed**: {seed}", file=discord.File(path))
+                
+                except base64.binascii.Error:
+                    await ctx.p(content=f"Error : {e}")
+                    return 
     
+    except Exception as e:
+        await ctx.respond(content=f"Error : {e}")
