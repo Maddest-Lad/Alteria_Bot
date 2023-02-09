@@ -15,7 +15,7 @@ def add_text_to_image(image, text, position, font_size, padding=10):
     draw = ImageDraw.Draw(img)
 
     # Set the font and font size
-    font = ImageFont.truetype("Arial_Bold.ttf", font_size)
+    font = ImageFont.truetype("resources/Arial_Bold.ttf", font_size)
 
     # Get the size of the text
     text_size = draw.textsize(text, font=font)

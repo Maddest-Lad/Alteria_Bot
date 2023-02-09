@@ -51,7 +51,7 @@ class SD:
                     json = await response.json()
                     for i in json['images']:
                         image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
-                        path = "Images/" + str(uuid.uuid4()) + ".png"
+                        path = "Images/SD/" + str(uuid.uuid4()) + ".png"
                         image.save(path)
                                 
                         # Respond With Input Parameters Included
