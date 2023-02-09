@@ -115,7 +115,7 @@ async def generate_image(ctx, prompt, negate, orientation, steps, resolution, pr
                     await ctx.respond(content=f"**Image Generated In**: {round(timer() - start, 2)} Seconds \n**Prompt**: {prompt} \n**Negate**: {negate} \n**Steps**: {steps} \n**Dims**: {width}x{height} \n**Prompt Obediance**: {scale} \n**Seed**: {seed}", file=discord.File(path))
                 
                 except base64.binascii.Error:
-                    await ctx.p(content=f"Error : {e}")
+                    await ctx.respond(content=f"Error : {e}")
                     return 
     
     except Exception as e:
