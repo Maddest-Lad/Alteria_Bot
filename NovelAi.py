@@ -6,14 +6,14 @@ from timeit import default_timer as timer
 import discord
 
 headers = {
-    'Host': '192.168.50.11',
+    'Host': '192.168.1.11',
     # 'Content-Length': '332',
     'Authorization': 'Bearer',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.63 Safari/537.36',
     # Already added when you pass json=
     # 'Content-Type': 'application/json',
     'Accept': '*/*',
-    'Origin': 'http://192.168.50.11',
+    'Origin': 'http://192.168.1.11',
     # 'Accept-Encoding': 'gzip, deflate',
     'Accept-Language': 'en-US,en;q=0.9',
     'Connection': 'close',
@@ -45,8 +45,8 @@ async def generate_image(ctx, prompt, negate, orientation, steps, resolution, pr
                 height = 512
                 width = 1024    
             else:
-                height = 1024
-                width = 1024
+                height = 768
+                width = 768
     
     # Scale Level
     match prompt_obediance:
@@ -97,7 +97,7 @@ async def generate_image(ctx, prompt, negate, orientation, steps, resolution, pr
     try:
         # Send Request
         async with aiohttp.ClientSession() as session:
-            async with session.post('http://192.168.50.11/generate-stream', headers=headers, json=json_data) as response:
+            async with session.post('http://192.168.1.11:80/generate-stream', headers=headers, json=json_data) as response:
                 
                 # Get Reason For Failure if It's Returned By Server                
                 try:
@@ -109,8 +109,8 @@ async def generate_image(ctx, prompt, negate, orientation, steps, resolution, pr
                     
                     with open(path, "wb") as f:
                         f.write(base64.b64decode(data))
-                
-                
+                                   
+                    
                     # Respond With Input Parameters Included
                     await ctx.respond(content=f"**Image Generated In**: {round(timer() - start, 2)} Seconds \n**Prompt**: {prompt} \n**Negate**: {negate} \n**Steps**: {steps} \n**Dims**: {width}x{height} \n**Prompt Obediance**: {scale} \n**Seed**: {seed}", file=discord.File(path))
                 
@@ -120,3 +120,23 @@ async def generate_image(ctx, prompt, negate, orientation, steps, resolution, pr
     
     except Exception as e:
         await ctx.respond(content=f"Error : {e}")
+
+# @bot.slash_command(guild_ids=scope, description="Generate an Image from a Prompt using NovelAI")
+# async def novelai(ctx,
+#                  prompt: Option(str, "The prompt for the AI to generate an image from", required=True),
+#                  negate: Option(str, "A prompt for the AI to negate in the output", required=False, default=""), 
+#                  orientation: Option(str, "The orientation of the image", required=False, choices=["square", "portrait", "landscape"], default="square"),
+#                  steps: Option(int, "The number of steps used to generate the image [1, 50]", required=False,  default=20),
+#                  resolution: Option(str, "The size of the longest dimension", required=False, choices=["normal", "high"], default="normal"),
+#                  prompt_obediance: Option(str, "The strictly the AI obeys the prompt [6, 12, 20]", required=False, choices=["low", "medium", "high"], default="medium"),
+#                  filter_out: Option(str, "Premade Categories to Negate", required=False, choices=["Bad Anatomy", "NSFW"]),
+#                  seed: Option(int, "The seed for image generation, useful for replicating results", required=False)
+#                  ):
+
+#        # Preseed
+#        if not seed:
+#            seed = random.randint(0, 999999999)
+
+#        # Let User Know We're Working On It
+#        await ctx.respond("Command Received", ephemeral=False)
+#        await generate_image(ctx, prompt, negate, orientation, steps, resolution, prompt_obediance, filter_out, seed)
