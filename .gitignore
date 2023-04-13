@@ -138,6 +138,8 @@ token.secret
 videos/
 
 # Images
+images/
 *.jpg
 *.jpeg
 *.png
+*.gif
