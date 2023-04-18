@@ -3,7 +3,7 @@ import pathlib
 import uuid
 import wget
 
-def bot_handler(image_url, text, text_position, font_size, color=None): 
+def caption_this(image_url, text, text_position, font_size, color=None): 
     img_path = pathlib.Path(wget.download(image_url, out="Images/Stellaris"))
     return add_text_to_image(img_path, text, text_position, font_size)
     
@@ -46,7 +46,7 @@ def add_text_to_image(image, text, position, font_size, padding=10):
     draw.text((x, y), text, font=font, fill=palette[0])
     
     # Save the modified image
-    path = "Images/Stellaris" + str(uuid.uuid4()) + ".png"    
+    path = "Media/Caption" + str(uuid.uuid4()) + ".png"    
     img.save(path)
     
     return path

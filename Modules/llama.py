@@ -75,7 +75,7 @@ class llama:
                     response_message = str(res['data'][0])
                     
                     log_entry = {"date": datetime.now().isoformat(), "query": query, "response" : response_message.split("### Response:")[-1].strip() }
-                    with open("log.json", 'a') as log:
+                    with open("Logs/LLaMa.json", 'a') as log:
                         json.dump(log_entry, log)
                         log.write(os.linesep)
                         

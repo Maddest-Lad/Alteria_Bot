@@ -2,18 +2,18 @@ import base64
 import uuid
 import aiohttp
 import io
-import discord
 import random
-from pprint import pprint
+import os
+import discord
 from PIL import Image
 from timeit import default_timer as timer
 
-class SD:
+class stable_diffusion:
     
     def __init__(self):
         self.queue = []
         self.api_url = "http://127.0.0.1:5002"
-        self.filter_list = open("filter.txt").read().split("\n")
+        self.filter_list = open("Resources/filter.txt").read().split("\n")
         
     
     async def generate(self, ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed):
@@ -36,7 +36,7 @@ class SD:
         if not negative_prompt:
             negative_prompt = " "
         
-        neg = negative_prompt + "loli, child, young, illegal, [bad_prompt_version2]"
+        neg = negative_prompt + "child, young, illegal, [bad_prompt_version2]"
         
         if len(prompt) > 2000:
             prompt = prompt[:1800]
@@ -52,6 +52,11 @@ class SD:
             'seed': seed, 
         }
         
+        # Log Payload
+        with open("Logs/stable-diffusion.json", 'a') as log:
+            json.dump(payload, log)
+            log.write(os.linesep)
+        
         try:
             # Send Request
             async with aiohttp.ClientSession() as session:
@@ -64,9 +69,17 @@ class SD:
                     spoiler = False
                     
                     for i in json['images']:
+                       # Load Image From Request
                         image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
-                        path = "Images/SD/" + str(uuid.uuid4()) + ".png"
+                        
+                        # Save Image and Parameters
+                        filename = str(uuid.uuid4())
+                        path = "Media/StableDiffusion/" + filename  + ".png"
                         image.save(path)
+                        
+                        # Save Generation Parameters
+                        with open(f"Media/StableDiffusion/{filename}.txt") as file:
+                            file.write(prompt, "\n", negative_prompt)
                         
                         # NSFW Check
                         items = prompt.split(" ")
@@ -80,4 +93,3 @@ class SD:
         
         except Exception as e:
             await ctx.respond(content=f"Error : {e}")
-        
