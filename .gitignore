@@ -1,7 +1,7 @@
 # Environment
 venv/
-Logs/
-Media/
+Logs/**
+Media/**
 __pycache__/
 
 # Bot Token

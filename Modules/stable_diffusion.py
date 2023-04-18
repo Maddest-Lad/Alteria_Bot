@@ -5,6 +5,7 @@ import io
 import random
 import os
 import discord
+import json
 from PIL import Image
 from timeit import default_timer as timer
 
@@ -60,15 +61,15 @@ class stable_diffusion:
         try:
             # Send Request
             async with aiohttp.ClientSession() as session:
-                async with session.post(url=f'{self.api_url}/sdapi/v1/txt2img', json=payload) as response:
+                async with session.post(url=f'{self.api_url}/sdapi/v1/txt2img', json=payload) as promise:
                     # Get Reason For Failure if It's Returned By Server                
 
-                    json = await response.json()
+                    response = await promise.json()
                     
                     # NSFW Spoilering 
                     spoiler = False
                     
-                    for i in json['images']:
+                    for i in response['images']:
                        # Load Image From Request
                         image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
                         
@@ -78,8 +79,8 @@ class stable_diffusion:
                         image.save(path)
                         
                         # Save Generation Parameters
-                        with open(f"Media/StableDiffusion/{filename}.txt") as file:
-                            file.write(prompt, "\n", negative_prompt)
+                        with open(f"Media/StableDiffusion/{filename}.txt", 'w') as file:
+                            file.write(f"{prompt} \n {negative_prompt}")
                         
                         # NSFW Check
                         items = prompt.split(" ")
@@ -89,7 +90,7 @@ class stable_diffusion:
                                 break
                                 
                         # Respond With Input Parameters Included
-                        await ctx.respond(content=f"**Prompt**:```{prompt}```**Steps**: {steps} \n**Prompt Obediance**: {prompt_obediance} \n**Seed**: {seed}", file=discord.File(path, spoiler=spoiler))
+                        await ctx.followup.send(content=f"**Prompt**:```{prompt}```**Steps**: {steps} \n**Prompt Obediance**: {prompt_obediance} \n**Seed**: {seed}", file=discord.File(path, spoiler=spoiler))
         
         except Exception as e:
-            await ctx.respond(content=f"Error : {e}")
+            await ctx.followup.send(content=f"Error : {e}")

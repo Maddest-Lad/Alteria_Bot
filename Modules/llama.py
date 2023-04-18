@@ -11,7 +11,7 @@ class llama:
         self.api_endpoint = "http://127.0.0.1:5001/run/textgen"
         
         
-    async def generate(self, ctx, query: str, max_tokens: int):
+    async def generate(self, query: str, max_tokens: int):
 
         formatted_input = f"""
         Below is an instruction that describes a task. Write a response that appropriately completes the request.

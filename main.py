@@ -4,7 +4,6 @@ from pathlib import Path
 from discord import Option
 from Modules.stable_diffusion import stable_diffusion
 import Modules.downloader as downloader
-from Modules.caption import caption_this
 from Modules.llama import llama
 from Modules.utils import *
 
@@ -26,15 +25,6 @@ async def on_ready():
 async def download(ctx, url: Option(str, "url to download")):
     await ctx.respond("Downloading")
     await ctx.send(file=discord.File(downloader.get(url)))
-    
-# Image and Gif Captioner
-@bot.slash_command(guilds=scope)
-async def caption(ctx, image_url: Option(str, "url to image"),
-                    text: Option(str, "top text"),
-                    text_position: Option(str, "text position", choices=["top", "bottom"], default="top"),
-                    font_size: Option(int, "font size", default=54)):
-    await ctx.respond("Adding Text")
-    await ctx.send(file=discord.File(caption_this(image_url, text, text_position, font_size)))    
 
 @bot.slash_command(guilds=scope)
 async def generate(ctx,
@@ -46,7 +36,7 @@ async def generate(ctx,
                    sampler: Option(str, "The sampling method used", required=False, choices=["Euler", "DDIM"], default="DDIM"),
                    seed: Option(int, "The seed for image generation, useful for replicating results", required=False)):
     
-    await ctx.respond(random.choice(sarcastic_responses))
+    await ctx.defer()
     await sd_generator.generate(ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed)
     
 @bot.slash_command(guilds=scope)
@@ -63,11 +53,7 @@ async def ask_alt(ctx,
                   max_tokens: Option(int, "A general measure that can be considered an aggregation of complexity and length [200-2000]", min_value=200, default=400, max_value=2000, required=False)):
     
     await ctx.defer()
-    try:
-        await ctx.followup.send(await llama.generate( message, max_tokens))
-    except:
-        pass # we dont care about the crappy library log spam
-
+    await ctx.followup.send(await llama.generate(message, max_tokens))
 
 if __name__ == '__main__':
 
