@@ -19,17 +19,16 @@ params = {
     's': 'cl',
 }
 
+class downloader():
 
-def get(url: str):
-    print("Downloading ", url)
+    def download(self, url: str):
+        response = requests.get(url, params=params, headers=headers, verify=False).text
 
-    response = requests.get(url, params=params, headers=headers, verify=False).text
+        # Search for the video tags
+        result = re.search('{start}(.*){end}'.format(start='<video', end='</video>'), response).group(1)
 
-    # Search for the video tags
-    result = re.search('{start}(.*){end}'.format(start='<video', end='</video>'), response).group(1)
+        # Now filter down to the data-src link
+        video_url = result[result.index("data-src=\"") + 10:result.index(".mp4\"") + 4]
 
-    # Now filter down to the data-src link
-    video_url = result[result.index("data-src=\"") + 10:result.index(".mp4\"") + 4]
-
-    # Download the video
-    return pathlib.Path(wget.download(video_url, out="videos/"))
+        # Download the video
+        return pathlib.Path(wget.download(video_url, out="Media/Videos"))

@@ -90,7 +90,7 @@ class stable_diffusion:
                                 break
                                 
                         # Respond With Input Parameters Included
-                        await ctx.followup.send(content=f"**Prompt**:```{prompt}```**Steps**: {steps} \n**Prompt Obediance**: {prompt_obediance} \n**Seed**: {seed}", file=discord.File(path, spoiler=spoiler))
+                        return f"**Prompt**:```{prompt}```**Steps**: {steps} \n**Prompt Obediance**: {prompt_obediance} \n**Seed**: {seed}", discord.File(path, spoiler=spoiler)
         
         except Exception as e:
             await ctx.followup.send(content=f"Error : {e}")

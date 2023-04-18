@@ -1,16 +1,20 @@
-import random
 import discord
 from pathlib import Path
 from discord import Option
-from Modules.stable_diffusion import stable_diffusion
-import Modules.downloader as downloader
-from Modules.llama import llama
-from Modules.utils import *
 
-# Initialize Classes
+from Modules.stable_diffusion import stable_diffusion
+from Modules.llama import llama
+from Modules.downloader import downloader
+from Modules.utils import log
+from Modules.constants import *
+
+# Initialize Bot
 bot = discord.Bot()
+
+# Initalize Class Objects
 sd_generator = stable_diffusion()
 llama = llama()
+downloader = downloader() 
 
 # Server Scope [Just Me, Paradox Plaza, Shadow Cabinet]
 scope = [446862283600166927, 439636881194483723, 844325005209632858]
@@ -23,8 +27,9 @@ async def on_ready():
 # Ifunny Downloading -- Exclusive to My Personal Server
 @bot.slash_command(guilds=[446862283600166927])
 async def download(ctx, url: Option(str, "url to download")):
-    await ctx.respond("Downloading")
-    await ctx.send(file=discord.File(downloader.get(url)))
+    await ctx.defer()
+    await ctx.followup.send(file=discord.File(downloader.download(url)))
+    log("Downloading", url)
 
 @bot.slash_command(guilds=scope)
 async def generate(ctx,
@@ -35,9 +40,9 @@ async def generate(ctx,
                    prompt_obediance: Option(int, "The strictly the AI obeys the prompt [1, 30]", required=False, default=9),
                    sampler: Option(str, "The sampling method used", required=False, choices=["Euler", "DDIM"], default="DDIM"),
                    seed: Option(int, "The seed for image generation, useful for replicating results", required=False)):
-    
     await ctx.defer()
-    await sd_generator.generate(ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed)
+    reply, file = await sd_generator.generate(ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed)
+    await ctx.followup.send(reply, file=file)
     
 @bot.slash_command(guilds=scope)
 async def generate_help(ctx, info_category: Option(str, "", required=True, choices=["Textual Inversion", "LoRA"])):
@@ -51,7 +56,6 @@ async def generate_help(ctx, info_category: Option(str, "", required=True, choic
 async def ask_alt(ctx, 
                   message: Option(str, "The postive prompt that describes the image to generate", required=True), 
                   max_tokens: Option(int, "A general measure that can be considered an aggregation of complexity and length [200-2000]", min_value=200, default=400, max_value=2000, required=False)):
-    
     await ctx.defer()
     await ctx.followup.send(await llama.generate(message, max_tokens))
 
