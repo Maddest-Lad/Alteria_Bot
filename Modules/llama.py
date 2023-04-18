@@ -82,10 +82,10 @@ class llama:
                     # Only Respond     
                     #bot_reply = response_message.split("### Response:")[-1]
                     formatted = ''.join([''.join(["> ", i.strip(), "\n"]) for i in response_message.split("### Response:")[-1].strip().split("\n")])
-                    await ctx.respond(f"{query}\n{formatted}")
+                    return f"{query}\n{formatted}"
         
         except Exception as e:
-            await ctx.respond(content=f"Error : {e}")
+            return f"Error : {e}"
         
         
 # import aiohttp

@@ -62,9 +62,9 @@ async def ask_alt(ctx,
                   message: Option(str, "The postive prompt that describes the image to generate", required=True), 
                   max_tokens: Option(int, "A general measure that can be considered an aggregation of complexity and length [200-2000]", min_value=200, default=400, max_value=2000, required=False)):
     
-    await ctx.respond(random.choice(sarcastic_responses))
+    await ctx.defer()
     try:
-        await ctx.respond(await llama.generate(ctx, message, max_tokens))
+        await ctx.followup.send(await llama.generate( message, max_tokens))
     except:
         pass # we dont care about the crappy library log spam
 
