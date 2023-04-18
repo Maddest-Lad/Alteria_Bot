@@ -1,15 +1,8 @@
 # Environment
 venv/
+Logs/
+Media/
+__pycache__/
 
 # Bot Token
 token.secret
-
-# Video Downloader
-videos/
-
-# Images
-images/
-*.jpg
-*.jpeg
-*.png
-*.gif
