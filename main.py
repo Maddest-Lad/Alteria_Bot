@@ -1,12 +1,17 @@
 import discord
 from pathlib import Path
 from discord import Option
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from Modules.stable_diffusion import stable_diffusion
 from Modules.llama import llama
 from Modules.downloader import downloader
-from Modules.utils import log
+from Modules.utils import log, clear_status
+from Modules.moon import moon_phase
 from Modules.constants import *
+
+# Initalize the Scheduler
+scheduler = AsyncIOScheduler(daemon=True)
 
 # Initialize Bot
 bot = discord.Bot()
@@ -60,10 +65,12 @@ async def ask_alt(ctx,
     await ctx.defer()
     await ctx.followup.send(await llama.generate(message, max_tokens))
 
-@bot.slash_command(guilds=scope, description="Set's the Bot's Status")
+## Commands Requiring Higher Perms
+
+@bot.slash_command(guilds=scope, administrator=True, description="Set's the Bot's Status")
 async def set_status(ctx, status: Option(str, "the status to be set", required=True),
-                     status_type: Option(str, "The Type of Custom Status", choices=["Game", "Streaming", "Watching", "Listening"], required=True),
-                     url: Option(str, "The Streaming Url (If Streaming Status Type)", default="")):
+                     status_type: Option(str, "The Type of Custom Status", choices=["Game", "Streaming", "Watching", "Listening", "Reset", "Moon"], required=True),
+                     url: Option(str, "The Streaming Url (If Streaming)", default="")):
     match status_type:
         case "Game":  
             await bot.change_presence(activity=discord.Game(name=status)) # Playing <status>
@@ -73,7 +80,11 @@ async def set_status(ctx, status: Option(str, "the status to be set", required=T
             await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status)) # Listening to <status>
         case "Watching":
             await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status)) # Watching <status>
-
+        case "Moon":
+            await moon_phase(bot)
+        case "Reset":
+            await clear_status(bot)
+            
     # Only the Sender Can See This Response
     await ctx.respond("Status Set", ephemeral=True) 
     log(status)
@@ -102,8 +113,13 @@ if __name__ == '__main__':
     # Initialize Logs
     Path("Logs").mkdir(exist_ok=True)
 
-    # Token Don't Share
-    try:
-        bot.run(open("token.secret", "r").read())
-    except FileNotFoundError:
-        print("Token Not Found, Please Generate a Token on https://discord.com/developers/applications, and then place it in a file Named \"token.secret\"")
+    # Register Schedulers
+    scheduler.add_job(func=moon_phase, args=[bot], trigger='cron', hour=17) # Turn on @ 5pm PST 
+    scheduler.add_job(func=clear_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
+
+    # Start Scheduler
+    scheduler.start()
+
+    # Start Bot
+    bot.run(open("token.secret", "r").read())
+   

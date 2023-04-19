@@ -1,5 +1,6 @@
 aiohttp
 aiosignal
+apscheduler
 async-timeout
 attrs
 certifi
@@ -7,10 +8,10 @@ charset-normalizer
 frozenlist
 idna
 multidict
+pillows
 py-cord
 requests
 typing_extensions
 urllib3
 wget
 yarl
-pillows
