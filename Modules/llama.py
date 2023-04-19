@@ -11,7 +11,7 @@ class llama:
         self.api_endpoint = "http://127.0.0.1:5001/run/textgen"
         
         
-    async def generate(self, query: str, max_tokens: int):
+    async def generate(self, query: str, max_tokens: int, min_length):
 
         formatted_input = f"""
         Below is an instruction that describes a task. Write a response that appropriately completes the request.
@@ -31,7 +31,7 @@ class llama:
             'repetition_penalty': 1.2,
             'encoder_repetition_penalty' : 1,
             'top_k': 40,
-            'min_length': 0,
+            'min_length': min_length,
             'no_repeat_ngram_size': 0,
             'num_beams': 1,
             'penalty_alpha': 0,

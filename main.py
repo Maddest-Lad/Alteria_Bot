@@ -1,12 +1,13 @@
 import discord
 from pathlib import Path
+import datetime
 from discord import Option
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from Modules.stable_diffusion import stable_diffusion
 from Modules.llama import llama
 from Modules.downloader import downloader
-from Modules.utils import log, clear_status
+from Modules.utils import log, clear_status, set_status
 from Modules.moon import moon_phase
 from Modules.constants import *
 
@@ -61,14 +62,14 @@ async def generate_help(ctx, info_category: Option(str, "", required=True, choic
 @bot.slash_command(guilds=scope, description="Asks Facebook's LLaMA Model a Question - Works Like ChatGPT")
 async def ask_alt(ctx, 
                   message: Option(str, "The postive prompt that describes the image to generate", required=True), 
-                  max_tokens: Option(int, "A general measure that can be considered an aggregation of complexity and length [200-2000]", min_value=200, default=400, max_value=2000, required=False)):
+                  max_tokens: Option(int, "A general measure that can be considered an aggregation of complexity and length [200-2000]", min_value=200, default=400, max_value=2000, required=False),
+                  min_length: Option(int, "The minimum length for a generation", min_value=0, default=0, max_value=1500)):
     await ctx.defer()
-    await ctx.followup.send(await llama.generate(message, max_tokens))
+    await ctx.followup.send(await llama.generate(message, max_tokens, min_length))
 
-## Commands Requiring Higher Perms
-
+## Commands Requiring Higher Perms - prefixed with z so they don't show up near the top
 @bot.slash_command(guilds=scope, administrator=True, description="Set's the Bot's Status")
-async def set_status(ctx, status: Option(str, "the status to be set", required=True),
+async def z_set_status(ctx, status: Option(str, "the status to be set", required=True),
                      status_type: Option(str, "The Type of Custom Status", choices=["Game", "Streaming", "Watching", "Listening", "Reset", "Moon"], required=True),
                      url: Option(str, "The Streaming Url (If Streaming)", default="")):
     match status_type:
@@ -90,7 +91,7 @@ async def set_status(ctx, status: Option(str, "the status to be set", required=T
     log(status)
 
 @bot.slash_command(guilds=scope, administrator=True, description="Logs Data")
-async def log_data(ctx, all_fields: Option(bool, "All Fields", required=False, default=False)):
+async def z_log_data(ctx, all_fields: Option(bool, "All Fields", required=False, default=False)):
     if ctx.author.id in authorized_users:
         data = {
             'guild'        : ctx.guild,
@@ -115,11 +116,17 @@ if __name__ == '__main__':
 
     # Register Schedulers
     scheduler.add_job(func=moon_phase, args=[bot], trigger='cron', hour=17) # Turn on @ 5pm PST 
-    scheduler.add_job(func=clear_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
-
+    scheduler.add_job(func=set_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
+    
+    # Setup on Bot Load
+    run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
+    if datetime.datetime.now().hour < 17:
+        scheduler.add_job(func=set_status, args=[bot], trigger='date', run_date=run_time)
+    else:
+        scheduler.add_job(func=moon_phase, args=[bot], trigger='date', run_date=run_time)
+    
     # Start Scheduler
     scheduler.start()
 
     # Start Bot
     bot.run(open("token.secret", "r").read())
-   
