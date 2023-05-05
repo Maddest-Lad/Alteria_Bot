@@ -50,14 +50,6 @@ async def generate(ctx,
     reply, file = await sd_generator.generate(ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed)
     await ctx.followup.send(reply, file=file)
     
-@bot.slash_command(guilds=scope, description="Provides a List of Present Textual Inversion and LoRAs Usable for Stable Diffusion")
-async def generate_help(ctx, info_category: Option(str, "", required=True, choices=["Textual Inversion", "LoRA"])):
-    match info_category:
-        case "Textual Inversion":
-            await ctx.respond(help_inversion)
-        case "LoRA":
-            await ctx.respond(help_lora)
-
 @bot.slash_command(guilds=scope, description="Asks Facebook's LLaMA Model a Question - Works Like ChatGPT")
 async def ask_alt(ctx, 
                   message: Option(str, "The postive prompt that describes the image to generate", required=True), 
