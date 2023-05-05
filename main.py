@@ -9,8 +9,10 @@ from Modules.llama import llama
 from Modules.downloader import downloader
 from Modules.utils import log, clear_status, set_status
 from Modules.moon import moon_phase
+from Modules.summarizer import summarizer
 from Modules.constants import *
 
+summarizer
 # Initalize the Scheduler
 scheduler = AsyncIOScheduler(daemon=True)
 
@@ -20,6 +22,7 @@ bot = discord.Bot()
 # Initalize Class Objects
 sd_generator = stable_diffusion()
 llama = llama()
+summarizer = summarizer(llama)
 downloader = downloader() 
 
 # Server Scope [Just Me, Paradox Plaza, Shadow Cabinet]
@@ -67,47 +70,52 @@ async def ask_alt(ctx,
     await ctx.defer()
     await ctx.followup.send(await llama.generate(message, max_tokens, min_length))
 
-## Commands Requiring Higher Perms - prefixed with z so they don't show up near the top
-@bot.slash_command(guilds=scope, administrator=True, description="Set's the Bot's Status")
-async def z_set_status(ctx, status: Option(str, "the status to be set", required=True),
-                     status_type: Option(str, "The Type of Custom Status", choices=["Game", "Streaming", "Watching", "Listening", "Reset", "Moon"], required=True),
-                     url: Option(str, "The Streaming Url (If Streaming)", default="")):
-    match status_type:
-        case "Game":  
-            await bot.change_presence(activity=discord.Game(name=status)) # Playing <status>
-        case "Streaming":  
-            await bot.change_presence(activity=discord.Streaming(name="status", url=url)) # Streaming <status>
-        case "Listening":
-            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status)) # Listening to <status>
-        case "Watching":
-            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status)) # Watching <status>
-        case "Moon":
-            await moon_phase(bot)
-        case "Reset":
-            await clear_status(bot)
-            
-    # Only the Sender Can See This Response
-    await ctx.respond("Status Set", ephemeral=True) 
-    log(status)
+@bot.slash_command(guilds=scope, description="Uses /Ask_Alt and scraped video captions to summarize the video")
+async def summarize_video(ctx, url: Option(str, "The url of the video to summarize", required=True)):
+    await ctx.defer()
+    await ctx.followup.send(await summarizer.summarize(url))
 
-@bot.slash_command(guilds=scope, administrator=True, description="Logs Data")
-async def z_log_data(ctx, all_fields: Option(bool, "All Fields", required=False, default=False)):
-    if ctx.author.id in authorized_users:
-        data = {
-            'guild'        : ctx.guild,
-            'channel'      : ctx.channel,
-            'user'         : ctx.user,
-            'perms'        : ctx.app_permissions    
-        }
-        
-        if all_fields:
-            data.update(vars(ctx))  
+# ## Commands Requiring Higher Perms - prefixed with z so they don't show up near the top
+# @bot.slash_command(guilds=scope, administrator=True, description="Set's the Bot's Status")
+# async def z_set_status(ctx, status: Option(str, "the status to be set", required=True),
+#                      status_type: Option(str, "The Type of Custom Status", choices=["Game", "Streaming", "Watching", "Listening", "Reset", "Moon"], required=True),
+#                      url: Option(str, "The Streaming Url (If Streaming)", default="")):
+#     match status_type:
+#         case "Game":  
+#             await bot.change_presence(activity=discord.Game(name=status)) # Playing <status>
+#         case "Streaming":  
+#             await bot.change_presence(activity=discord.Streaming(name="status", url=url)) # Streaming <status>
+#         case "Listening":
+#             await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status)) # Listening to <status>
+#         case "Watching":
+#             await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status)) # Watching <status>
+#         case "Moon":
+#             await moon_phase(bot)
+#         case "Reset":
+#             await clear_status(bot)
             
-        # User Friendly
-        formatted = '\n'.join([key + " : " + str(value) for key, value in data.items()])
-        await ctx.respond(f"Data Dump:```{formatted}```")
-    else:
-        await ctx.respond("You Don't Have Permission for This Command")
+#     # Only the Sender Can See This Response
+#     await ctx.respond("Status Set", ephemeral=True) 
+#     log(status)
+
+# @bot.slash_command(guilds=scope, administrator=True, description="Logs Data")
+# async def z_log_data(ctx, all_fields: Option(bool, "All Fields", required=False, default=False)):
+#     if ctx.author.id in authorized_users:
+#         data = {
+#             'guild'        : ctx.guild,
+#             'channel'      : ctx.channel,
+#             'user'         : ctx.user,
+#             'perms'        : ctx.app_permissions    
+#         }
+        
+#         if all_fields:
+#             data.update(vars(ctx))  
+            
+#         # User Friendly
+#         formatted = '\n'.join([key + " : " + str(value) for key, value in data.items()])
+#         await ctx.respond(f"Data Dump:```{formatted}```")
+#     else:
+#         await ctx.respond("You Don't Have Permission for This Command")
 
 if __name__ == '__main__':
 

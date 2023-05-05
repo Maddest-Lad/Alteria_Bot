@@ -13,7 +13,7 @@ class stable_diffusion:
     
     def __init__(self):
         self.queue = []
-        self.api_url = "http://127.0.0.1:5002"
+        self.api_url = "http://localhost:5002"
         self.filter_list = open("Resources/filter.txt").read().split("\n")
         
     

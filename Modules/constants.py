@@ -5,6 +5,6 @@ help_inversion = "Textual Inversion Keywords: \n```001glitch-core, 80s-anime-ai,
 
 help_lora = "Low Rank Adpations: \n You Can Adjust the :1 from [0.0-1.0] to Change the Effect's Strength ```<lora:Lora-1990sAnimeStyle:1> <lora:Lora-Arcane:1> <lora:Lora-BOTW:1> <lora:Lora-FlatColor:1> <lora:Lora-Ghibli:1> <lora:Lora-NecoArc:1> <lora:Lora-Persona:1> <lora:Lora-SamYang:1> <lora:Lora-Synthpunk:1> <lora:Lora-Tokiame:1> <lora:Lora-Vaporwave:1> <lora:Lora-VoxMachina:1> <lora:Lora-Wanostyle:1> <lora:Lora-ZeldaCid:1>```"
 
-status_playing = ["with my emotions", "hide-and-seek in my feelings", "with fire", "hard to get", "", "it cool", "dumb", "games", "catch up", "hooky", "favorites", "fast and loose", "dirty", "minecraft", "the victim", "mind games", "second fiddle", "the long game", "the fool", "for time", "the blame game", "the odds", "it by ear", "with fate"]
+status_playing = ["with my emotions", "hide-and-seek", "with fire", "hard to get", "", "it cool", "dumb", "games", "catch up", "hooky", "favorites", "fast and loose", "dirty", "minecraft", "the victim", "mind games", "second fiddle", "the long game", "the fool", "for time", "the blame game", "the odds", "it by ear", "with fate"]
 
 status_watching = ["cat videos", "ants march", "eggs hatch", "stars twinkle", "noodles dance", "cheese age", "plants drink", "ice melt", "spiders web", "turtles sprint", "rain fall", "otters float", "sand shift", "clouds race", "rocks erode", "snails speed", "paint dry", "toast"]

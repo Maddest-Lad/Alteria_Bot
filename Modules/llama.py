@@ -8,10 +8,10 @@ class llama:
     
     def __init__(self):
         self.queue = []
-        self.api_endpoint = "http://127.0.0.1:5001/run/textgen"
+        self.api_endpoint = "http://localhost:5000/api/v1/generate"
         
         
-    async def generate(self, query: str, max_tokens: int, min_length):
+    async def generate(self, query: str, max_tokens: int, min_length, include_query=True):
 
         formatted_input = f"""
         Below is an instruction that describes a task. Write a response that appropriately completes the request.
@@ -20,16 +20,16 @@ class llama:
         ### Response:
 
         """
-        
-        # Based on Llama 30b Text
+                
         params = {
+            'prompt': formatted_input,
             'max_new_tokens': max_tokens,
             'do_sample': True,
-            'temperature': 0.55,
-            'top_p': 0.5,
+            'temperature': 0.72,
+            'top_p': 0.1,
             'typical_p': 1,
-            'repetition_penalty': 1.2,
-            'encoder_repetition_penalty' : 1,
+            'repetition_penalty': 1.18,
+            'encoder_repetition_penalty': 1.0,
             'top_k': 40,
             'min_length': min_length,
             'no_repeat_ngram_size': 0,
@@ -37,42 +37,23 @@ class llama:
             'penalty_alpha': 0,
             'length_penalty': 1,
             'early_stopping': False,
-            'seed' : -1,
+            'seed': -1,
+            'add_bos_token': True,
+            'truncation_length': 2048,
+            'ban_eos_token': False,
+            'skip_special_tokens': True,
+            'stopping_strings': [],
         }
-        
-        payload = {
-            "data": [
-                formatted_input,
-                params['max_new_tokens'],
-                params['do_sample'],
-                params['temperature'],
-                params['top_p'],
-                params['typical_p'],
-                params['repetition_penalty'],
-                params['encoder_repetition_penalty'],
-                params['top_k'],
-                params['min_length'],
-                params['no_repeat_ngram_size'],
-                params['num_beams'],
-                params['penalty_alpha'],
-                params['length_penalty'],
-                params['early_stopping'],
-                params['seed']
-            ]
-        }
-        
-        #print(payload, self.api_endpoint)
         
         try:
             # Send Request
             async with aiohttp.ClientSession() as session:
-                async with session.post(url=self.api_endpoint, json=payload) as response:
+                async with session.post(url=self.api_endpoint, json=params) as response:
                     res = await response.json()
                     
-                    #print(res)
-                                 
+   
                     # Respond With Input Parameters Included
-                    response_message = str(res['data'][0])
+                    response_message = str(res['results'][0]['text'])
                     
                     log_entry = {"date": datetime.now().isoformat(), "query": query, "response" : response_message.split("### Response:")[-1].strip() }
                     with open("Logs/LLaMa.json", 'a') as log:
@@ -82,8 +63,11 @@ class llama:
                     # Only Respond     
                     #bot_reply = response_message.split("### Response:")[-1]
                     formatted = ''.join([''.join(["> ", i.strip(), "\n"]) for i in response_message.split("### Response:")[-1].strip().split("\n")])
-                    return f"{query}\n{formatted}"
-        
+                    if include_query:
+                        return f"{query}\n{formatted}"
+                    else:
+                        return f"{formatted}"
+                    
         except Exception as e:
             return f"Error : {e}"
         
