@@ -12,10 +12,6 @@ from Modules.moon import moon_phase
 from Modules.summarizer import summarizer
 from Modules.constants import *
 
-summarizer
-# Initalize the Scheduler
-scheduler = AsyncIOScheduler(daemon=True)
-
 # Initialize Bot
 bot = discord.Bot()
 
@@ -75,58 +71,19 @@ async def summarize_video(ctx, url: Option(str, "The url of the video to summari
     await ctx.defer()
     await ctx.followup.send(await summarizer.summarize(url))
 
-# ## Commands Requiring Higher Perms - prefixed with z so they don't show up near the top
-# @bot.slash_command(guilds=scope, administrator=True, description="Set's the Bot's Status")
-# async def z_set_status(ctx, status: Option(str, "the status to be set", required=True),
-#                      status_type: Option(str, "The Type of Custom Status", choices=["Game", "Streaming", "Watching", "Listening", "Reset", "Moon"], required=True),
-#                      url: Option(str, "The Streaming Url (If Streaming)", default="")):
-#     match status_type:
-#         case "Game":  
-#             await bot.change_presence(activity=discord.Game(name=status)) # Playing <status>
-#         case "Streaming":  
-#             await bot.change_presence(activity=discord.Streaming(name="status", url=url)) # Streaming <status>
-#         case "Listening":
-#             await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status)) # Listening to <status>
-#         case "Watching":
-#             await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status)) # Watching <status>
-#         case "Moon":
-#             await moon_phase(bot)
-#         case "Reset":
-#             await clear_status(bot)
-            
-#     # Only the Sender Can See This Response
-#     await ctx.respond("Status Set", ephemeral=True) 
-#     log(status)
-
-# @bot.slash_command(guilds=scope, administrator=True, description="Logs Data")
-# async def z_log_data(ctx, all_fields: Option(bool, "All Fields", required=False, default=False)):
-#     if ctx.author.id in authorized_users:
-#         data = {
-#             'guild'        : ctx.guild,
-#             'channel'      : ctx.channel,
-#             'user'         : ctx.user,
-#             'perms'        : ctx.app_permissions    
-#         }
-        
-#         if all_fields:
-#             data.update(vars(ctx))  
-            
-#         # User Friendly
-#         formatted = '\n'.join([key + " : " + str(value) for key, value in data.items()])
-#         await ctx.respond(f"Data Dump:```{formatted}```")
-#     else:
-#         await ctx.respond("You Don't Have Permission for This Command")
-
 if __name__ == '__main__':
 
     # Initialize Logs
     Path("Logs").mkdir(exist_ok=True)
+    
+    # Initalize the Scheduler
+    scheduler = AsyncIOScheduler(daemon=True)
 
-    # Register Schedulers
+    # Register Jobs
     scheduler.add_job(func=moon_phase, args=[bot], trigger='cron', hour=17) # Turn on @ 5pm PST 
     scheduler.add_job(func=set_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
     
-    # Setup on Bot Load
+    # Using the Scheduler, Queue Up Status Setting Jobs 15 Seconds After the Bot Starts
     run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
     if datetime.datetime.now().hour < 17:
         scheduler.add_job(func=set_status, args=[bot], trigger='date', run_date=run_time)
