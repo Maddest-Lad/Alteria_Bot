@@ -1,7 +1,5 @@
 import aiohttp
-from pprint import pprint
 
-# WTTR Constants
 WWO_CODE = {
     "113": "Sunny",
     "116": "PartlyCloudy",
@@ -77,27 +75,37 @@ WEATHER_SYMBOL = {
 
 HOST = 'wttr.in'
 
-async def get_weather_forecast(location):
+ 
+# Json Format J1 gives all data while J2 gives just current 
+async def get_weather_forecast(location, json_format='j1'):
     async with aiohttp.ClientSession() as session:
-        async with session.get(url=f'https://{HOST}/{location}?format=j1') as promise:  # Get Data Formatted as JSON
+        async with session.get(url=f'https://{HOST}/{location}?format={json_format}') as promise:  # Get Data Formatted as JSON
             return await promise.json()          
 
-async def current_report(location):
-    current = (await get_weather_forecast(location))['current_condition'][0]   
+async def get_current_report(location):
+    current = (await get_weather_forecast(location, json_format='j2'))['current_condition'][0]   
       
     return f"""Current Weather Report
-    > Feels Like: {current['FeelsLikeF']}f
-    > Weather: {WEATHER_SYMBOL[WWO_CODE[current['weatherCode']]]} {current['weatherDesc'][0]['value']}
-    > Cloud Cover: {current['cloudcover']}%
-    > Humidity: {current['humidity']}%
-    """
+> Feels Like: {current['FeelsLikeF']}f
+> Weather: {WEATHER_SYMBOL[WWO_CODE[current['weatherCode']]]} {current['weatherDesc'][0]['value']}
+> Cloud Cover: {current['cloudcover']}%
+> Humidity: {current['humidity']}%
+    """ # this formatting kills me
 
-# async def forecast(location):
+# async def get_forecast(location):
+#     forecast = await get_weather_forecast(location)
+#     for key in forecast['weather'][0]['hourly']:
+#         print(key['chanceofrain'])
+        
+#     return 
 
 
 if __name__ == '__main__':
     import asyncio
     location = 'Maple+Valley'
-    print(asyncio.run(get_weather_forecast(location)))
-    print(asyncio.run(current_report(location)))
     
+    data = asyncio.run(get_weather_forecast(location))
+    report = asyncio.run(get_current_report(location))
+    #forecast = asyncio.run(get_forecast(location))
+    
+    print(report)
