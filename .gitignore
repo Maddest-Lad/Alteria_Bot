@@ -2,6 +2,7 @@
 venv/
 Logs/**
 Media/**
+Data/**
 __pycache__/
 
 # Bot Token
