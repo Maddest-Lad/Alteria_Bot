@@ -25,3 +25,21 @@ async def set_status(bot):
     else:
         # Playing
         await bot.change_presence(activity=discord.Game(name=choice(status_playing)))
+
+def convert_to_pacific(time_zone: str, hours: int) -> int:
+    # Calculate the offset in hours from the Pacific time zone to the input time zone
+    offset_hours = None
+    match time_zone:
+        case "Pacific":
+            offset_hours = 0
+        case "Mountain":
+            offset_hours = 1
+        case "Central":
+            offset_hours = 2
+        case "Eastern":
+            offset_hours = 3
+
+    # Convert the input hours to Pacific time
+    pacific_hours = (hours - offset_hours) % 24
+
+    return pacific_hours
