@@ -79,7 +79,7 @@ HOST = 'wttr.in'
 # Json Format J1 gives all data while J2 gives just current 
 async def get_weather_forecast(location, json_format='j1'):
     async with aiohttp.ClientSession() as session:
-        async with session.get(url=f'https://{HOST}/{location}?format={json_format}') as promise:  # Get Data Formatted as JSON
+        async with session.get(url=f'http://{HOST}/{location}?format={json_format}') as promise:  # Get Data Formatted as JSON
             return await promise.json()          
 
 async def get_current_report(location):

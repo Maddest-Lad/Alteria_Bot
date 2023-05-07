@@ -1,6 +1,7 @@
 # System Libraries
 from pathlib import Path
 import datetime
+import random
 
 # Installed Libraries
 import discord
@@ -38,6 +39,7 @@ user_list = [User.from_json(item) for item in data_dir.glob('*.json')]
 @bot.event
 async def on_ready():
     print(f"{bot.user} Has Started Up Successfully")
+    await send_weather_report("165971552771244033", "Maple+Valley")
 
 # Video Downloading -- Exclusive to My Personal Server
 @bot.slash_command(guilds=[446862283600166927], description="Downloads A Video")
@@ -86,7 +88,7 @@ async def daily_weather(ctx: ApplicationContext,
         user.set_location(None)
     else:
         # Format Correctly
-        location = location.strip().replace(" ", "+")
+        location = city.strip().replace(" ", "+")
         
         # Schedule Time
         report_time = convert_to_pacific(time_zone, report_time)
@@ -95,20 +97,23 @@ async def daily_weather(ctx: ApplicationContext,
         user.set_location(location)
         user.set_report_time(report_time)
         # Register New Scheduler
-        scheduler.add_job(func=send_message, args=[user.id, get_current_report(user.location)], trigger='cron', hour=user.report_time)
+        scheduler.add_job(func=send_weather_report, args=[user.id, user.location], trigger='cron', hour=user.report_time)
+    
+    await ctx.respond(random.choice(sarcastic_responses), ephemeral=True)  
         
 # Get User From a Given ApplicationContext
 async def get_user(ctx: ApplicationContext, user_list: list) -> User:
     for user in user_list:
-        if user.id == ctx.user.id:
+        if user.id == str(ctx.user.id):
             return user
-    return User(ctx.user.id, ctx.user.name)
+    return User(str(ctx.user.id), ctx.user.name)
 
-# Send Message to a User
-async def send_message(user_id: str, message: str):
-    user = bot.fetch_user(user_id)
-    await user.send(message)
-
+# Sends Weather Report
+async def send_weather_report(user_id: str, location: str):
+    user = await bot.fetch_user(user_id)
+    report = await get_current_report(location)
+    await user.send(report)
+    
 if __name__ == '__main__':   
     
     # Initialize Logs
@@ -123,7 +128,8 @@ if __name__ == '__main__':
     
     # Register Weather Job For Each User
     for user in user_list:
-        scheduler.add_job(func=send_message, args=[user.id, get_current_report(user.location)], trigger='cron', hour=user.report_time)
+        if user.location and user.report_time:
+            scheduler.add_job(func=send_weather_report, args=[user.id, get_current_report(user.location)], trigger='cron', hour=user.report_time)
     
     # Using the Scheduler, Queue Up Status Setting Jobs 15 Seconds After the Bot Starts
     run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)

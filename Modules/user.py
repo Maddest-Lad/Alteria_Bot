@@ -10,14 +10,12 @@ class User:
     
     # For Daily Weather Reports
     location: str 
-    time_zone: str 
-    report_time: int # By Hour 1-24
+    report_time: str # By Hour 1-24
     
-    def __init__(self, id, username, location=None, time_zone=None, report_time=None):
+    def __init__(self, id, username, location=None, report_time=None):
         self.id = id        
         self.username = username
         self.location = location
-        self.time_zone = time_zone
         self.report_time = report_time
         
         # Create File For New Users
@@ -29,7 +27,7 @@ class User:
     def from_json(cls, json_path: Path):
         with open(json_path, 'r') as json_file:
             user = json.load(json_file)
-            return cls(user['id'], user['username'], user['location'])
+            return cls(user['id'], user['username'], user['location'], user['report_time'])
     
     # Overwrites The Existing File
     def update_json(self):
@@ -40,11 +38,8 @@ class User:
     def set_location(self, location):
         self.location = location
         self.update_json()
-         
-    def set_time_zone(self, time_zone):
-        self.time_zone = time_zone
-        self.update_json()
     
+    # PST Incoming Data Should be Convert to PST via utils.convert_to_pacific()
     def set_report_time(self, report_time):
         self.report_time = report_time
         self.update_json()    
