@@ -3,6 +3,7 @@ import asyncio
 from pathlib import Path
 import datetime
 import random
+import re
 import time
 
 # Installed Libraries
@@ -82,8 +83,8 @@ async def summarize_video(ctx: ApplicationContext, url: Option(str, "The url of 
 @bot.slash_command(guilds=scope, description="Uses CLIP and OCR to summarize and image")
 async def process_image(ctx: ApplicationContext, url: Option(str, "The url of the image to process", required=True)):
     await ctx.defer()
-    # Download Image
-    if not (url.endswith(".png") or url.endswith(".jpg") or url.endswith(".webm") or url.endswith(".jpeg")):
+    # Check URL
+    if not any(filetype in url for filetype in ["png", "jpg", "webm", "jpeg"]):
         await ctx.followup.send("Image must be a PNG, JPG/JPEG or WEBM")
     else:
         try:

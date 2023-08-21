@@ -2,7 +2,6 @@ import requests
 import pathlib
 import re
 import subprocess
-import time
 import urllib3
 import uuid
 import wget
@@ -38,12 +37,19 @@ class downloader():
     
     def download_image(self, url: str):
         try:
-            filetype = url.split(".")[-1]
+            match = re.search(r"\.(png|jpg|jpeg)(?:\?|$)", url)
+            
+            if match is None:
+                raise ValueError("Invalid URL or unsupported file type")
+            
+            # Group 1 contains the matched file extension
+            filetype = match.group(1)
+            
             outpath = f"Media/Images/{str(uuid.uuid4())}.{filetype}" # Unique* Filename
             
             subprocess.run(['wget', '-O', outpath, url])
 
             return pathlib.Path(outpath)        
-            
+                        
         except Exception as e:
             return f"Image Download Error : {e}"
