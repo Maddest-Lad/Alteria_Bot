@@ -4,7 +4,6 @@ Logs/**
 Media/**
 Data/**
 __pycache__/
-Resources/**
 
 # Bot Token
 token.secret
