@@ -18,7 +18,6 @@ async def clear_status(bot):
     await bot.change_presence(activity=discord.Activity())
     
 async def set_status(bot):
-    
     if bool(getrandbits(1)):
         # Watching
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=choice(status_watching)))
@@ -43,3 +42,7 @@ def convert_to_pacific(time_zone: str, hours: int) -> int:
     pacific_hours = (hours - offset_hours) % 24
 
     return pacific_hours
+
+def chunk_by(string: str, chunk_size: int):
+    # Converts a String into a list of strings chunk_size long 
+    return [string[i:i+chunk_size] for i in range(0, len(string), chunk_size)]

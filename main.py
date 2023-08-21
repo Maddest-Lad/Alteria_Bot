@@ -1,7 +1,9 @@
 # System Libraries
+import asyncio
 from pathlib import Path
 import datetime
 import random
+import time
 
 # Installed Libraries
 import discord
@@ -17,7 +19,7 @@ from Modules.stable_diffusion import stable_diffusion
 from Modules.summarizer import summarizer
 from Modules.user import User
 from Modules.utils import log, set_status, convert_to_pacific
-from Modules.weather import get_current_report
+# from Modules.weather import get_current_report
 
 # Initialize Bot
 bot = discord.Bot()
@@ -39,7 +41,6 @@ user_list = [User.from_json(item) for item in data_dir.glob('*.json')]
 @bot.event
 async def on_ready():
     print(f"{bot.user} Has Started Up Successfully")
-    await send_weather_report("165971552771244033", "Maple+Valley")
 
 # Video Downloading -- Exclusive to My Personal Server
 @bot.slash_command(guilds=[446862283600166927], description="Downloads A Video")
@@ -72,34 +73,38 @@ async def ask_alt(ctx: ApplicationContext,
 @bot.slash_command(guilds=scope, description="Uses /Ask_Alt and scraped video captions to summarize the video")
 async def summarize_video(ctx: ApplicationContext, url: Option(str, "The url of the video to summarize", required=True)):
     await ctx.defer()
-    await ctx.followup.send(await summarizer.summarize(url))
+    summary: list = await summarizer.summarize(url)
 
-@bot.slash_command(guild=scope, description="Opt in for a daily weather report of your City")
-async def daily_weather(ctx: ApplicationContext,
-                  city : Option(str, "The Name of the City to Report", required=True),
-                  time_zone: Option(str, "Your Time Zone", choices=["Pacific", "Mountain", "Central", "Eastern"], required=True),
-                  report_time: Option(int, "what hour would you Like to Recieve The Report 1-24", min_value=1,  max_value=24),
-                  stop_reports: Option(bool, "set this to true to cancel weather notifications", required=False),
-                  ):
-    # Get User Object (Creates New if It Doesn't Exist)
-    user = await get_user(ctx, user_list)
+    for chunk in summary:
+        await ctx.followup.send(chunk)
+        time.sleep(0.25)
+
+# @bot.slash_command(guild=scope, description="Opt in for a daily weather report of your City")
+# async def daily_weather(ctx: ApplicationContext,
+#                   city : Option(str, "The Name of the City to Report", required=True),
+#                   time_zone: Option(str, "Your Time Zone", choices=["Pacific", "Mountain", "Central", "Eastern"], required=True),
+#                   report_time: Option(int, "what hour would you Like to Recieve The Report 1-24", min_value=1,  max_value=24),
+#                   stop_reports: Option(bool, "set this to true to cancel weather notifications", required=False),
+#                   ):
+#     # Get User Object (Creates New if It Doesn't Exist)
+#     user = await get_user(ctx, user_list)
     
-    if stop_reports:
-        user.set_location(None)
-    else:
-        # Format Correctly
-        location = city.strip().replace(" ", "+")
+#     if stop_reports:
+#         user.set_location(None)
+#     else:
+#         # Format Correctly
+#         location = city.strip().replace(" ", "+")
         
-        # Schedule Time
-        report_time = convert_to_pacific(time_zone, report_time)
+#         # Schedule Time
+#         report_time = convert_to_pacific(time_zone, report_time)
         
-        # Update User Object
-        user.set_location(location)
-        user.set_report_time(report_time)
-        # Register New Scheduler
-        scheduler.add_job(func=send_weather_report, args=[user.id, user.location], trigger='cron', hour=user.report_time)
+#         # Update User Object
+#         user.set_location(location)
+#         user.set_report_time(report_time)
+#         # Register New Scheduler
+#         scheduler.add_job(func=send_weather_report, args=[user.id, user.location], trigger='cron', hour=user.report_time)
     
-    await ctx.respond(random.choice(sarcastic_responses), ephemeral=True)  
+#     await ctx.respond(random.choice(sarcastic_responses), ephemeral=True)  
         
 # Get User From a Given ApplicationContext
 async def get_user(ctx: ApplicationContext, user_list: list) -> User:
@@ -109,10 +114,10 @@ async def get_user(ctx: ApplicationContext, user_list: list) -> User:
     return User(str(ctx.user.id), ctx.user.name)
 
 # Sends Weather Report
-async def send_weather_report(user_id: str, location: str):
-    user = await bot.fetch_user(user_id)
-    report = await get_current_report(location)
-    await user.send(report)
+# async def send_weather_report(user_id: str, location: str):
+#     user = await bot.fetch_user(user_id)
+#     report = await get_current_report(location)
+#     await user.send(report)
     
 if __name__ == '__main__':   
     
@@ -127,9 +132,9 @@ if __name__ == '__main__':
     scheduler.add_job(func=set_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
     
     # Register Weather Job For Each User
-    for user in user_list:
-        if user.location and user.report_time:
-            scheduler.add_job(func=send_weather_report, args=[user.id, get_current_report(user.location)], trigger='cron', hour=user.report_time)
+    # for user in user_list:
+    #     if user.location and user.report_time:
+    #         scheduler.add_job(func=send_weather_report, args=[user.id, get_current_report(user.location)], trigger='cron', hour=user.report_time)
     
     # Using the Scheduler, Queue Up Status Setting Jobs 15 Seconds After the Bot Starts
     run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)

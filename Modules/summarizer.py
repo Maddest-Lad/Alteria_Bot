@@ -1,5 +1,6 @@
 from youtube_transcript_api import YouTubeTranscriptApi
 from Modules.utils import log
+from Modules.utils import chunk_by
 
 class summarizer():
 
@@ -17,11 +18,12 @@ class summarizer():
             joined_srt = ' '.join([i['text'].strip() for i in srt])
            
             response = await self.llama.generate(query=f"### Write Bullet Points Summarizing the following transcript \n ### Transcript \n {joined_srt}", max_tokens=1000, min_length=0, include_query=False)           
-            
-            if len(response) > 2000:
-                response = response[:1999]
-            
-            return f"{url}\n**Summary:**\n{response}"
+
+            # Discord 2000 Char Message Limit
+            if len(response > 1999):
+                return chunk_by(response, 1999)
+
+            return [response]
             
         except Exception as e:
             return f"Error : {e}" 
