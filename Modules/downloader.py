@@ -1,8 +1,11 @@
 import requests
-import wget
 import pathlib
 import re
+import subprocess
+import time
 import urllib3
+import uuid
+import wget
 
 urllib3.disable_warnings()
 
@@ -21,7 +24,7 @@ params = {
 
 class downloader():
 
-    def download(self, url: str):
+    def download_if(self, url: str):
         response = requests.get(url, params=params, headers=headers, verify=False).text
 
         # Search for the video tags
@@ -30,5 +33,17 @@ class downloader():
         # Now filter down to the data-src link
         video_url = result[result.index("data-src=\"") + 10:result.index(".mp4\"") + 4]
 
-        # Download the video
+        # Download the video    
         return pathlib.Path(wget.download(video_url, out="Media/Videos"))
+    
+    def download_image(self, url: str):
+        try:
+            filetype = url.split(".")[-1]
+            outpath = f"Media/Images/{str(uuid.uuid4())}.{filetype}" # Unique* Filename
+            
+            subprocess.run(['wget', '-O', outpath, url])
+
+            return pathlib.Path(outpath)        
+            
+        except Exception as e:
+            return f"Image Download Error : {e}"

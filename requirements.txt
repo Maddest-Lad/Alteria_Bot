@@ -8,8 +8,9 @@ charset-normalizer
 frozenlist
 idna
 multidict
-pillows
+pillow
 py-cord
+pytesseract
 requests
 typing_extensions
 urllib3

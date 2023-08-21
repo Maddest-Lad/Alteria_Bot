@@ -18,13 +18,13 @@ from Modules.llama import llama
 from Modules.stable_diffusion import stable_diffusion
 from Modules.summarizer import summarizer
 from Modules.user import User
-from Modules.utils import log, set_status, convert_to_pacific
+from Modules.utils import log, set_status, ocr
 # from Modules.weather import get_current_report
 
 # Initialize Bot
 bot = discord.Bot()
 
-# Initalize Class Objects (Only Neccessary For When Queuing Async Handling)
+# Initalize Module Class Objects
 stable_diffusion = stable_diffusion()
 llama = llama()
 summarizer = summarizer(llama)
@@ -46,7 +46,7 @@ async def on_ready():
 @bot.slash_command(guilds=[446862283600166927], description="Downloads A Video")
 async def download(ctx: ApplicationContext, url: Option(str, "url to download")):
     await ctx.defer()
-    await ctx.followup.send(file=discord.File(downloader.download(url)))
+    await ctx.followup.send(file=discord.File(downloader.download_if(url)))
     log("Downloading", url)
 
 @bot.slash_command(guilds=scope, description="Uses Stable Diffusion to Generate an Image from Text")
@@ -78,6 +78,23 @@ async def summarize_video(ctx: ApplicationContext, url: Option(str, "The url of 
     for chunk in summary:
         await ctx.followup.send(chunk)
         time.sleep(0.25)
+
+@bot.slash_command(guilds=scope, description="Uses CLIP and OCR to summarize and image")
+async def process_image(ctx: ApplicationContext, url: Option(str, "The url of the image to process", required=True)):
+    await ctx.defer()
+    # Download Image
+    if not (url.endswith(".png") or url.endswith(".jpg") or url.endswith(".webm") or url.endswith(".jpeg")):
+        await ctx.followup.send("Image must be a PNG, JPG/JPEG or WEBM")
+    else:
+        try:
+            image_path = downloader.download_image(url)
+            # Parse OCR Text and CLIP Description from Image
+            ocr_text = ocr(image_path)
+            clip_description = await stable_diffusion.interogate_clip(image_path)
+
+            await ctx.followup.send(f"""Optical Character Recognition (OCR):\n```{ocr_text}```CLIP:\n```{clip_description}```""", file=discord.File(image_path))
+        except Exception as e:
+            await ctx.followup.send(str(e))
 
 # @bot.slash_command(guild=scope, description="Opt in for a daily weather report of your City")
 # async def daily_weather(ctx: ApplicationContext,
@@ -138,6 +155,7 @@ if __name__ == '__main__':
     
     # Using the Scheduler, Queue Up Status Setting Jobs 15 Seconds After the Bot Starts
     run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
+    
     if datetime.datetime.now().hour < 17:
         scheduler.add_job(func=set_status, args=[bot], trigger='date', run_date=run_time)
     else:

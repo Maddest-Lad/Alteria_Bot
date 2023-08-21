@@ -1,11 +1,14 @@
-import base64
-import uuid
 import aiohttp
+import base64
 import io
-import random
-import os
-import discord
 import json
+import os
+import pathlib
+import random
+import uuid
+
+import discord
+
 from PIL import Image
 from timeit import default_timer as timer
 
@@ -16,6 +19,32 @@ class stable_diffusion:
         self.api_url = "http://localhost:5002"
         self.filter_list = open("Resources/filter.txt").read().split("\n")
         
+    
+    async def interogate_clip(self, image_path: pathlib.Path):
+        # Convert Image to Base64
+        # See for why decode() is neccessary https://stackoverflow.com/questions/3715493/encoding-an-image-file-with-base64
+        encoded_image = base64.b64encode(open(image_path, 'rb').read()).decode() 
+
+        payload = {
+            "image": encoded_image,
+            "model": "clip"
+        }
+        
+        # Log Payload
+        with open("Logs/stable-diffusion.json", 'a') as log:
+            json.dump(payload, log)
+            log.write(os.linesep)
+        
+        try:
+            # Send Request
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=f'{self.api_url}/sdapi/v1/interrogate', json=payload) as promise:                
+                    response = await promise.json()
+
+                    return response['caption']
+        
+        except Exception as e:
+            return f"CLIP Error : {e}"
     
     async def generate(self, ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed):
         

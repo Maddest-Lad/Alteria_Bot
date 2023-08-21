@@ -1,11 +1,14 @@
 import json 
 import os
 import discord
+
 from random import getrandbits, choice
 from datetime import datetime
 from pathlib import Path
-from Modules.constants import status_playing, status_watching
+from PIL import Image
+from pytesseract import pytesseract
 
+from Modules.constants import status_playing, status_watching
 
 def log(*value):
     log_entry = {"date": datetime.now().isoformat(), "value": json.dumps(value) } 
@@ -46,3 +49,7 @@ def convert_to_pacific(time_zone: str, hours: int) -> int:
 def chunk_by(string: str, chunk_size: int):
     # Converts a String into a list of strings chunk_size long 
     return [string[i:i+chunk_size] for i in range(0, len(string), chunk_size)]
+
+def ocr(image_path: Path) -> str:
+    img = Image.open(image_path)
+    return pytesseract.image_to_string(img)
