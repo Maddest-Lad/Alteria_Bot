@@ -1,10 +1,12 @@
 aiohttp
 aiosignal
+aio-mc-rcon
 apscheduler
 async-timeout
 attrs
 certifi
 charset-normalizer
+ffmpeg-python
 frozenlist
 idna
 multidict
@@ -17,3 +19,4 @@ urllib3
 wget
 yarl
 youtube_transcript_api 
+pytubefix

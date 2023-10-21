@@ -12,17 +12,9 @@ class llama:
         
         
     async def generate(self, query: str, max_tokens: int, min_length, include_query=True):
-
-        formatted_input = f"""
-        Below is an instruction that describes a task. Write a response that appropriately completes the request.
-        ### Instruction:
-        {query}
-        ### Response:
-
-        """
                 
         params = {
-            'prompt': formatted_input,
+            'prompt': query,
             'max_new_tokens': max_tokens,
             'do_sample': True,
             'temperature': 0.72,
@@ -50,19 +42,17 @@ class llama:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url=self.api_endpoint, json=params) as response:
                     res = await response.json()
-                    
-   
+
                     # Respond With Input Parameters Included
                     response_message = str(res['results'][0]['text'])
-                    
-                    log_entry = {"date": datetime.now().isoformat(), "query": query, "response" : response_message.split("### Response:")[-1].strip() }
+
+                    log_entry = {"date": datetime.now().isoformat(), "query": query, "response" : response_message }
                     with open("Logs/LLaMa.json", 'a') as log:
                         json.dump(log_entry, log)
                         log.write(os.linesep)
                         
-                    # Only Respond     
-                    #bot_reply = response_message.split("### Response:")[-1]
-                    formatted = ''.join([''.join(["> ", i.strip(), "\n"]) for i in response_message.split("### Response:")[-1].strip().split("\n")])
+                    # # Only Respond     
+                    formatted = ''.join([''.join(["> ", i.strip(), "\n"]) for i in response_message.strip().split("\n")])
                     if include_query:
                         return f"{query}\n{formatted}"
                     else:

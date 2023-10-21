@@ -76,12 +76,12 @@ class stable_diffusion:
             'negative_prompt': neg,
             'width': width,
             'height': height,
-            'scale': prompt_obediance,
+            'cfg_scale': prompt_obediance,
             'sampler_name': sampler,
             'steps': steps,
-            'seed': seed, 
+            'seed': seed
         }
-        
+            
         # Log Payload
         with open("Logs/stable-diffusion.json", 'a') as log:
             json.dump(payload, log)

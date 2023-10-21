@@ -43,13 +43,14 @@ user_list = [User.from_json(item) for item in data_dir.glob('*.json')]
 async def on_ready():
     print(f"{bot.user} Has Started Up Successfully")
 
-# Video Downloading -- Exclusive to My Personal Server
+# IF Downloading -- Exclusive to My Personal Server / DMs
 @bot.slash_command(guilds=[446862283600166927], description="Downloads A Video")
 async def download(ctx: ApplicationContext, url: Option(str, "url to download")):
     await ctx.defer()
     await ctx.followup.send(file=discord.File(downloader.download_if(url)))
     log("Downloading", url)
 
+# Generates an Image Using Stable Diffusion
 @bot.slash_command(guilds=scope, description="Uses Stable Diffusion to Generate an Image from Text")
 async def generate(ctx: ApplicationContext,
                    prompt: Option(str, "The postive prompt that describes the image to generate", required=True),
@@ -63,6 +64,7 @@ async def generate(ctx: ApplicationContext,
     reply, file = await stable_diffusion.generate(ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed)
     await ctx.followup.send(reply, file=file)
 
+# Generates a Response Using Locally Hosted Large Langauge Model  
 @bot.slash_command(guilds=scope, description="Asks Facebook's LLaMA Model a Question - Works Like ChatGPT")
 async def ask_alt(ctx: ApplicationContext, 
                   message: Option(str, "The postive prompt that describes the image to generate", required=True), 
@@ -71,20 +73,19 @@ async def ask_alt(ctx: ApplicationContext,
     await ctx.defer()
     await ctx.followup.send(await llama.generate(message, max_tokens, min_length))
 
-@bot.slash_command(guilds=scope, description="Uses /Ask_Alt and scraped video captions to summarize the video")
-async def summarize_video(ctx: ApplicationContext, url: Option(str, "The url of the video to summarize", required=True)):
+# Download a Youtube Video and Import it Into Plex  
+@bot.slash_command(guilds=[446862283600166927], description="Download a Youtube Video and Import it Into Plex")
+async def youtube_to_plex(ctx: ApplicationContext, 
+                  url: Option(str, "The URL of the Youtube Video", required=True)):
     await ctx.defer()
-    summary: list = await summarizer.summarize(url)
+    await ctx.followup.send(await downloader.download_yt(url))
 
-    for chunk in summary:
-        await ctx.followup.send(chunk)
-        time.sleep(0.25)
-
+# Uses OCR to Detect Text and Reverse Stable Diffusion to Generate a Description Based on the Current Image Model Loaded
 @bot.slash_command(guilds=scope, description="Uses CLIP and OCR to summarize and image")
 async def process_image(ctx: ApplicationContext, url: Option(str, "The url of the image to process", required=True)):
     await ctx.defer()
     # Check URL
-    if not any(filetype in url for filetype in ["png", "jpg", "webm", "jpeg"]):
+    if not any(filetype in url for filetype in ["png", "jpg", "webm", "jpeg"]): # Hacky
         await ctx.followup.send("Image must be a PNG, JPG/JPEG or WEBM")
     else:
         try:
@@ -96,33 +97,6 @@ async def process_image(ctx: ApplicationContext, url: Option(str, "The url of th
             await ctx.followup.send(f"""Optical Character Recognition (OCR):\n```{ocr_text}```CLIP:\n```{clip_description}```""", file=discord.File(image_path))
         except Exception as e:
             await ctx.followup.send(str(e))
-
-# @bot.slash_command(guild=scope, description="Opt in for a daily weather report of your City")
-# async def daily_weather(ctx: ApplicationContext,
-#                   city : Option(str, "The Name of the City to Report", required=True),
-#                   time_zone: Option(str, "Your Time Zone", choices=["Pacific", "Mountain", "Central", "Eastern"], required=True),
-#                   report_time: Option(int, "what hour would you Like to Recieve The Report 1-24", min_value=1,  max_value=24),
-#                   stop_reports: Option(bool, "set this to true to cancel weather notifications", required=False),
-#                   ):
-#     # Get User Object (Creates New if It Doesn't Exist)
-#     user = await get_user(ctx, user_list)
-    
-#     if stop_reports:
-#         user.set_location(None)
-#     else:
-#         # Format Correctly
-#         location = city.strip().replace(" ", "+")
-        
-#         # Schedule Time
-#         report_time = convert_to_pacific(time_zone, report_time)
-        
-#         # Update User Object
-#         user.set_location(location)
-#         user.set_report_time(report_time)
-#         # Register New Scheduler
-#         scheduler.add_job(func=send_weather_report, args=[user.id, user.location], trigger='cron', hour=user.report_time)
-    
-#     await ctx.respond(random.choice(sarcastic_responses), ephemeral=True)  
         
 # Get User From a Given ApplicationContext
 async def get_user(ctx: ApplicationContext, user_list: list) -> User:
@@ -130,12 +104,6 @@ async def get_user(ctx: ApplicationContext, user_list: list) -> User:
         if user.id == str(ctx.user.id):
             return user
     return User(str(ctx.user.id), ctx.user.name)
-
-# Sends Weather Report
-# async def send_weather_report(user_id: str, location: str):
-#     user = await bot.fetch_user(user_id)
-#     report = await get_current_report(location)
-#     await user.send(report)
     
 if __name__ == '__main__':   
     
@@ -149,12 +117,7 @@ if __name__ == '__main__':
     scheduler.add_job(func=moon_phase, args=[bot], trigger='cron', hour=17) # Turn on @ 5pm PST 
     scheduler.add_job(func=set_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
     
-    # Register Weather Job For Each User
-    # for user in user_list:
-    #     if user.location and user.report_time:
-    #         scheduler.add_job(func=send_weather_report, args=[user.id, get_current_report(user.location)], trigger='cron', hour=user.report_time)
-    
-    # Using the Scheduler, Queue Up Status Setting Jobs 15 Seconds After the Bot Starts
+    # Using the Scheduler, Queue Setting Bot Status For 15 Seconds After the Bot Starts
     run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
     
     if datetime.datetime.now().hour < 17:
