@@ -20,6 +20,7 @@ from Modules.stable_diffusion import stable_diffusion
 from Modules.summarizer import summarizer
 from Modules.user import User
 from Modules.utils import log, set_status, ocr
+from Modules.youtube_downloader import download_video
 # from Modules.weather import get_current_report
 
 # Initialize Bot
@@ -78,7 +79,7 @@ async def ask_alt(ctx: ApplicationContext,
 async def youtube_to_plex(ctx: ApplicationContext, 
                   url: Option(str, "The URL of the Youtube Video", required=True)):
     await ctx.defer()
-    await ctx.followup.send(await downloader.download_yt(url))
+    await ctx.followup.send(await download_video(url))
 
 # Uses OCR to Detect Text and Reverse Stable Diffusion to Generate a Description Based on the Current Image Model Loaded
 @bot.slash_command(guilds=scope, description="Uses CLIP and OCR to summarize and image")
