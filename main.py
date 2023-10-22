@@ -79,7 +79,7 @@ async def ask_alt(ctx: ApplicationContext,
 async def youtube_to_plex(ctx: ApplicationContext, 
                   url: Option(str, "The URL of the Youtube Video", required=True)):
     await ctx.defer()
-    await ctx.followup.send(await download_video(url))
+    await ctx.followup.send(await download_video(url, media_library_path=Path("/mnt/md0/Plex/Youtube")))
 
 # Uses OCR to Detect Text and Reverse Stable Diffusion to Generate a Description Based on the Current Image Model Loaded
 @bot.slash_command(guilds=scope, description="Uses CLIP and OCR to summarize and image")

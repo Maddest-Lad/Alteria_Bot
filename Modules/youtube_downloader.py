@@ -7,7 +7,7 @@ from pytubefix import YouTube
 
 def sanitize_filename(filename):
     """
-    Remove or replace characters that aren't allowed in filenames.
+    Remove or replace characters that aren't allowed in filenames
     """
     # Remove invalid characters
     filename = re.sub(r'[\\/*?:"<>|]', "", filename)
@@ -17,11 +17,11 @@ def sanitize_filename(filename):
 
     return filename
 
-
-async def download_video(url: str, include_subtitles: bool = True, media_library_path = Path("/mnt/md0/Plex/Youtube")) -> str:
+async def download_video(url: str, media_library_path: Path, include_subtitles: bool = True) -> str:
     """
     url: URL of the video to download
-    subitle: Bool detirmining whether or not to download them
+    media_library_path: working directory for media library 
+    include_subtitles: Bool detirmining whether or not to download them
     """
     yt = YouTube(url)
     metadata = {}
@@ -33,24 +33,23 @@ async def download_video(url: str, include_subtitles: bool = True, media_library
         print(f"Video Unavailable: {e}")
         return f"The Video is Unavailable, Reason: {str(e)}"
 
-    # Gather Video Metadata Information to Bake in With FFMPEG
+    # Gather video metadata information to bake in with FFmpeg ~ still needs some work for MKV tags
     metadata['studio'] = sanitize_filename(yt.author)
     metadata['title'] = sanitize_filename(yt.title)
     metadata['rating'] = yt.rating
     metadata['published'] = yt.publish_date.strftime("%Y-%m-%d")
     metadata['year'] = yt.publish_date.year
     
-    # Filename & Metadata Info
+    # Filename & metadata info
     output_path = media_library_path / metadata['studio']
 
-    # Download The Best Quality Video and Audio Tracks, Because Youtube Adaptive/Progressive Streaming Is Funky
-    input_video = Path(yt.streams.filter(only_video=True).order_by('resolution').last().download(filename="video", output_path=output_path))
+    # Download the best adaptive video and audio tracks # TODO store these using tempfile instead of on disk  
+    input_video = Path(yt.streams.filter(only_video=True).order_by('resolution').last().download(filename="video", output_path=output_path)) 
     input_audio = Path(yt.streams.filter(only_audio=True).order_by('abr').last().download(filename="audio", output_path=output_path))
 
     # Download SRT Subtitles
     input_subtitles = None
     if include_subtitles and yt.captions:
-
         # Define a priority list of preferred caption languages
         preferred_languages = ['en', 'en-us', 'a.en'] # Note "a.en" is Youtube Auto-Generated
 
@@ -58,7 +57,9 @@ async def download_video(url: str, include_subtitles: bool = True, media_library
         for lang in preferred_languages:
             if lang in yt.captions:
                 input_subtitles = Path(yt.captions[lang].download(title=metadata['title'], output_path=output_path))
-                break  # Exit the loop once we've found and downloaded a caption
+                break
+    
+    # Merge everything together with ffmpeg 
     try:  
         return await combine_with_ffmpeg(input_video, input_audio, input_subtitles, metadata, output_path)
     finally:
@@ -105,7 +106,7 @@ async def combine_with_ffmpeg(input_video: Path, input_audio: Path, input_subtit
     # Run the ffmpeg command
     try:
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        return "Video Downloaded Successfully"
+        return "Video Downloaded and Merged Successfully"
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
         return "An error occurred during the video processing." 
