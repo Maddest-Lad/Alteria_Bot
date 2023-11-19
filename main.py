@@ -1,10 +1,12 @@
 # System Libraries
 import asyncio
-from pathlib import Path
 import datetime
 import random
 import re
 import time
+
+from pathlib import Path
+from string import Template
 
 # Installed Libraries
 import discord
@@ -34,10 +36,18 @@ downloader = downloader()
 
 # Server Scope [Just Me, Paradox Plaza, Shadow Cabinet]
 scope = [446862283600166927, 439636881194483723, 844325005209632858]
-
+ 
 # Load Known Users
 data_dir = Path("Data") 
 user_list = [User.from_json(item) for item in data_dir.glob('*.json')]
+
+# Load Prompts
+prompts = []
+with open("75000 prompts.txt", 'r') as file:
+    prompts = file.read().replace("\"", "").split("\n")
+
+# Load AI Templates
+improve_prompt_template = Template(open("Modules/prompt_template.txt").read())
 
 # Startup
 @bot.event
@@ -57,13 +67,49 @@ async def generate(ctx: ApplicationContext,
                    prompt: Option(str, "The postive prompt that describes the image to generate", required=True),
                    negative_prompt: Option(str, "the negative prompt", required=False), 
                    orientation: Option(str, "The orientation of the image", required=False, choices=["square", "portrait", "landscape"], default="square"),
-                   steps: Option(int, "The number of steps used to generate the image [10, 50]", required=False,  default=20),
+                   steps: Option(int, "The number of steps used to generate the image [10, 50]", required=False,  default=35),
                    prompt_obediance: Option(int, "The strictly the AI obeys the prompt [1, 30]", required=False, default=9),
-                   sampler: Option(str, "The sampling method used", required=False, choices=["Euler", "DDIM"], default="DDIM"),
-                   seed: Option(int, "The seed for image generation, useful for replicating results", required=False)):
+                   sampler: Option(str, "The sampling method used", required=False, choices=["DPM++ 2M Karras", "DDIM"], default="DPM++ 2M Karras"),
+                   seed: Option(int, "The seed for image generation, useful for replicating results", required=False),
+                   improve_prompt: Option(bool, "Whether to improve the prompt using a language model", required=False,  default=False)
+                   ):
     await ctx.defer()
+
+    if improve_prompt: 
+        prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : prompt}), raw_response=True)
+
     reply, file = await stable_diffusion.generate(ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed)
     await ctx.followup.send(reply, file=file)
+
+# Generates a Random Image with Stable Diffusion
+@bot.slash_command(guilds=scope, description="Generates a random image")
+async def random_image(ctx: ApplicationContext,
+                       images_to_generate: Option(int, "The number of images to generate", required=False,  default=1),
+                       randomize_checkpoints: Option(bool, "Whether to use a random SDXL model or not", required=False,  default=False),
+                       improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False)):
+    
+    await ctx.defer()
+    
+    orientations = ["square", "portrait", "landscape"]
+    for _ in range(0, images_to_generate):
+        
+        # Choose Prompt
+        image_prompt = random.choice(prompts)
+
+        # Improve Prompt
+        if improve_prompt: 
+            image_prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : image_prompt}), raw_response=True)
+
+        reply, file = await stable_diffusion.generate(ctx, 
+                                                      prompt=image_prompt, 
+                                                      negative_prompt="", 
+                                                      orientation=random.choice(orientations),
+                                                      steps=35,
+                                                      prompt_obediance=9, 
+                                                      sampler="DPM++ 2M Karras")
+        await ctx.followup.send(reply, file=file)
+    if images_to_generate > 1:
+        await ctx.followup.send("All Images Generated")
 
 # Generates a Response Using Locally Hosted Large Langauge Model  
 @bot.slash_command(guilds=scope, description="Asks Facebook's LLaMA Model a Question - Works Like ChatGPT")
@@ -107,7 +153,7 @@ async def get_user(ctx: ApplicationContext, user_list: list) -> User:
     return User(str(ctx.user.id), ctx.user.name)
     
 if __name__ == '__main__':   
-    
+
     # Initialize Logs
     Path("Logs").mkdir(exist_ok=True)
     

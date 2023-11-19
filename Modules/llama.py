@@ -11,7 +11,7 @@ class llama:
         self.api_endpoint = "http://localhost:5000/api/v1/generate"
         
         
-    async def generate(self, query: str, max_tokens: int, min_length, include_query=True):
+    async def generate(self, query: str, max_tokens: int = 2048, min_length: int = 0, include_query: bool = True, raw_response: bool = False):
                 
         params = {
             'prompt': query,
@@ -50,8 +50,11 @@ class llama:
                     with open("Logs/LLaMa.json", 'a') as log:
                         json.dump(log_entry, log)
                         log.write(os.linesep)
-                        
-                    # # Only Respond     
+                    
+                    if raw_response:
+                        return response_message
+                    
+                    # Only Respond     
                     formatted = ''.join([''.join(["> ", i.strip(), "\n"]) for i in response_message.strip().split("\n")])
                     if include_query:
                         return f"{query}\n{formatted}"
@@ -60,3 +63,6 @@ class llama:
                     
         except Exception as e:
             return f"Error : {e}"
+
+
+        

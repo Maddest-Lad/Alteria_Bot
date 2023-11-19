@@ -46,7 +46,7 @@ class stable_diffusion:
         except Exception as e:
             return f"CLIP Error : {e}"
     
-    async def generate(self, ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed):
+    async def generate(self, ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed=None):
         
         if not seed:
             seed = random.randint(0, 10000000000)
@@ -54,19 +54,19 @@ class stable_diffusion:
         # Oreintation
         match orientation:
             case "square":
-                width = 512
-                height = 512
-            case "portrait":
-                width = 512
-                height = 768
-            case "landscape":
                 width = 768
-                height = 512
+                height = 768
+            case "portrait":
+                width = 768
+                height = 1280
+            case "landscape":
+                width = 1280
+                height = 768
 
         if not negative_prompt:
             negative_prompt = " "
         
-        neg = negative_prompt + "child, young, illegal, [bad_prompt_version2]"
+        neg = negative_prompt + "child, young, illegal, bad-anime-horror bad_prompt_version2 verybadimagenegative_v1.3 negative_hand-neg"
         
         if len(prompt) > 2000:
             prompt = prompt[:1800]
@@ -79,7 +79,7 @@ class stable_diffusion:
             'cfg_scale': prompt_obediance,
             'sampler_name': sampler,
             'steps': steps,
-            'seed': seed
+            'seed': seed,
         }
             
         # Log Payload

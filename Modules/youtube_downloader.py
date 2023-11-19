@@ -106,7 +106,7 @@ async def combine_with_ffmpeg(input_video: Path, input_audio: Path, input_subtit
     # Run the ffmpeg command
     try:
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        return "Video Downloaded and Merged Successfully"
+        return f"Downloaded and Merged **{metadata['title']}** Successfully"
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
         return "An error occurred during the video processing." 
