@@ -47,7 +47,8 @@ with open("75000 prompts.txt", 'r') as file:
     prompts = file.read().replace("\"", "").split("\n")
 
 # Load AI Templates
-improve_prompt_template = Template(open("Modules/prompt_template.txt").read())
+improve_prompt_template = Template(open("Modules/improve_prompt_template.txt").read())
+new_prompt_template = open("Modules/new_prompt_template.txt").read()
 orientations = ["square", "portrait", "landscape"]
 
 # Startup
@@ -86,8 +87,9 @@ async def generate(ctx: ApplicationContext,
 @bot.slash_command(guilds=scope, description="Generates a random image")
 async def random_image(ctx: ApplicationContext,
                        images_to_generate: Option(int, "The number of images to generate", required=False,  default=1),
-                       randomize_checkpoints: Option(bool, "Whether to use a random SDXL model or not", required=False,  default=False),
-                       improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False)):
+                       improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False),
+                       new_prompt: Option(bool, "Whether to generate the prompt with a language model", required=False,  default=False)
+                       ):
     
     await ctx.defer()
     
@@ -98,7 +100,9 @@ async def random_image(ctx: ApplicationContext,
         image_prompt = random.choice(prompts).replace("!", "")
 
         # Improve Prompt
-        if improve_prompt: 
+        if new_prompt: 
+            image_prompt = await llama.generate(query=new_prompt_template, raw_response=True)
+        if improve_prompt:
             image_prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : image_prompt}), raw_response=True)
 
         # Set Orientation
