@@ -48,6 +48,7 @@ with open("75000 prompts.txt", 'r') as file:
 
 # Load AI Templates
 improve_prompt_template = Template(open("Modules/prompt_template.txt").read())
+orientations = ["square", "portrait", "landscape"]
 
 # Startup
 @bot.event
@@ -90,20 +91,26 @@ async def random_image(ctx: ApplicationContext,
     
     await ctx.defer()
     
-    orientations = ["square", "portrait", "landscape"]
+    # Generation Loop
     for _ in range(0, images_to_generate):
         
         # Choose Prompt
-        image_prompt = random.choice(prompts)
+        image_prompt = random.choice(prompts).replace("!", "")
 
         # Improve Prompt
         if improve_prompt: 
             image_prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : image_prompt}), raw_response=True)
 
+        # Set Orientation
+        if "portrait" in image_prompt.lower():
+            orientation = "portrait"
+        else:
+            orientation = random.choice(orientations)
+
         reply, file = await stable_diffusion.generate(ctx, 
                                                       prompt=image_prompt, 
                                                       negative_prompt="", 
-                                                      orientation=random.choice(orientations),
+                                                      orientation=orientation,
                                                       steps=35,
                                                       prompt_obediance=9, 
                                                       sampler="DPM++ 2M Karras")
