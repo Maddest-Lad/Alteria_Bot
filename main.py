@@ -41,14 +41,19 @@ scope = [446862283600166927, 439636881194483723, 844325005209632858]
 data_dir = Path("Data") 
 user_list = [User.from_json(item) for item in data_dir.glob('*.json')]
 
+# Load Nouns
+nouns = []
+with open("Resources/nounlist.txt", 'r') as file:
+    nouns = file.read().split("\n")
+
 # Load Prompts
 prompts = []
-with open("75000 prompts.txt", 'r') as file:
+with open("Resources/75000 prompts.txt", 'r') as file:
     prompts = file.read().replace("\"", "").split("\n")
 
 # Load AI Templates
-improve_prompt_template = Template(open("Modules/improve_prompt_template.txt").read())
-new_prompt_template = open("Modules/new_prompt_template.txt").read()
+improve_prompt_template = Template(open("Resources/improve_prompt_template.txt").read())
+new_prompt_template = Template(open("Resources/new_prompt_template.txt").read())
 orientations = ["square", "portrait", "landscape"]
 
 # Startup
@@ -98,10 +103,11 @@ async def random_image(ctx: ApplicationContext,
         
         # Choose Prompt
         image_prompt = random.choice(prompts).replace("!", "")
+        noun = random.choice(nouns)
 
         # Improve Prompt
-        if new_prompt: 
-            image_prompt = await llama.generate(query=new_prompt_template, raw_response=True)
+        if new_prompt:
+            image_prompt = await llama.generate(query=new_prompt_template.substitute({'Noun' : noun }), raw_response=True)
         if improve_prompt:
             image_prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : image_prompt}), raw_response=True)
 

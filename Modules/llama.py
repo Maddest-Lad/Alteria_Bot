@@ -17,12 +17,12 @@ class llama:
             'prompt': query,
             'max_new_tokens': max_tokens,
             'do_sample': True,
-            'temperature': 0.72,
-            'top_p': 0.1,
+            'temperature': 1.31,
+            'top_p': 0.14,
             'typical_p': 1,
             'repetition_penalty': 1.18,
             'encoder_repetition_penalty': 1.0,
-            'top_k': 40,
+            'top_k': 50,
             'min_length': min_length,
             'no_repeat_ngram_size': 0,
             'num_beams': 1,
@@ -45,6 +45,7 @@ class llama:
 
                     # Respond With Input Parameters Included
                     response_message = str(res['results'][0]['text'])
+                    response_message.replace("`", "")
 
                     log_entry = {"date": datetime.now().isoformat(), "query": query, "response" : response_message }
                     with open("Logs/LLaMa.json", 'a') as log:

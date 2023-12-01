@@ -47,7 +47,9 @@ class stable_diffusion:
             return f"CLIP Error : {e}"
     
     async def generate(self, ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed=None):
-        
+        prompt = prompt.replace("`", "")
+
+
         if not seed:
             seed = random.randint(0, 10000000000)
         
@@ -66,13 +68,13 @@ class stable_diffusion:
         if not negative_prompt:
             negative_prompt = " "
         
-        neg = negative_prompt + "child, young, illegal, bad-anime-horror bad_prompt_version2 verybadimagenegative_v1.3 negative_hand-neg"
+        neg = negative_prompt + "bad-anime-horror bad_prompt_version2 verybadimagenegative_v1.3 negative_hand-neg <lora:EasyFix:0.5>"
         
         if len(prompt) > 2000:
             prompt = prompt[:1800]
         
         payload = {
-            'prompt': prompt,
+            'prompt': prompt + " <lora:add-detail-xl:0.5> <lora:xl_more_art-full_v1:0.5>",
             'negative_prompt': neg,
             'width': width,
             'height': height,
@@ -117,7 +119,7 @@ class stable_diffusion:
                             if item.lower() in self.filter_list:
                                 spoiler = True
                                 break
-                                
+                        
                         # Respond With Input Parameters Included
                         return f"**Prompt**:```{prompt}```**Steps**: {steps} \n**Prompt Obediance**: {prompt_obediance} \n**Seed**: {seed}", discord.File(path, spoiler=spoiler)
         
