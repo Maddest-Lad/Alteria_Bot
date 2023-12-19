@@ -45,15 +45,13 @@ class stable_diffusion:
         
         except Exception as e:
             return f"CLIP Error : {e}"
-    
-    async def generate(self, ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed=None):
+
+    async def generate(self, ctx, prompt, negative_prompt, orientation, steps, cfg_scale, sampler):
         prompt = prompt.replace("`", "")
 
-
-        if not seed:
-            seed = random.randint(0, 10000000000)
+        seed = random.randint(0, 10000000000)
         
-        # Oreintation
+        # Orientation
         match orientation:
             case "square":
                 width = 768
@@ -64,6 +62,7 @@ class stable_diffusion:
             case "landscape":
                 width = 1280
                 height = 768
+
 
         if not negative_prompt:
             negative_prompt = " "
@@ -78,12 +77,12 @@ class stable_diffusion:
             'negative_prompt': neg,
             'width': width,
             'height': height,
-            'cfg_scale': prompt_obediance,
+            'cfg_scale': cfg_scale,
             'sampler_name': sampler,
             'steps': steps,
             'seed': seed,
         }
-            
+
         # Log Payload
         with open("Logs/stable-diffusion.json", 'a') as log:
             json.dump(payload, log)
@@ -121,7 +120,81 @@ class stable_diffusion:
                                 break
                         
                         # Respond With Input Parameters Included
-                        return f"**Prompt**:```{prompt}```**Steps**: {steps} \n**Prompt Obediance**: {prompt_obediance} \n**Seed**: {seed}", discord.File(path, spoiler=spoiler)
+                        return f"**Prompt**:```{prompt}```**Steps**: {steps} \n**Prompt Obediance**: {cfg_scale} \n**Seed**: {seed}", discord.File(path, spoiler=spoiler)
+        
+        except Exception as e:
+            await ctx.followup.send(content=f"Error : {e}")
+
+    async def generate_turbo(self, ctx, prompt):
+        maybe_not_words = ["young", "illegal", "child", "`"]
+
+        prompt = prompt.lower()
+        for word in maybe_not_words:
+            prompt = prompt.replace(word, "")
+
+        negative_prompt = "bad-anime-horror, bad_prompt_version2, verybadimagenegative_v1.3, negative_hand-neg, <lora:EasyFix:0.3>, blurry, unclear"
+        
+        if len(prompt) > 2000:
+            prompt = prompt[:1800]
+        
+        payload = {
+            "cfg_scale" : 6,
+            "denoising_strength" : 0.8,
+            "disable_extra_networks" : False,
+            "enable_hr" : False,
+            "height" : 1296,
+            "width" : 1024,
+            "hr_negative_prompt" : negative_prompt,
+            "hr_prompt" : prompt,
+            "hr_scale" : 1.5,
+            "hr_second_pass_steps" : 10,
+            "hr_upscaler" : "None",
+            "n_iter" : 1,
+            "negative_prompt" : negative_prompt,
+            "prompt" : prompt,
+            "restore_faces" : False,
+            "sampler_name" : "Euler a",
+            "steps" : 15,
+        }
+
+        # Log Payload
+        with open("Logs/stable-diffusion.json", 'a') as log:
+            json.dump(payload, log)
+            log.write(os.linesep)
+        
+        try:
+            # Send Request
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=f'{self.api_url}/sdapi/v1/txt2img', json=payload) as promise:
+                    # Get Reason For Failure if It's Returned By Server                
+
+                    response = await promise.json()
+                    
+                    # NSFW Spoilering 
+                    spoiler = False
+                    
+                    for i in response['images']:
+                       # Load Image From Request
+                        image = Image.open(io.BytesIO(base64.b64decode(i.split(",",1)[0])))
+                        
+                        # Save Image and Parameters
+                        filename = str(uuid.uuid4())
+                        path = "Media/StableDiffusion/" + filename  + ".png"
+                        image.save(path)
+                        
+                        # Save Generation Parameters
+                        with open(f"Media/StableDiffusion/{filename}.txt", 'w') as file:
+                            file.write(f"{prompt} \n {negative_prompt}")
+                        
+                        # NSFW Check
+                        items = prompt.split(" ")
+                        for item in items:
+                            if item.lower() in self.filter_list:
+                                spoiler = True
+                                break
+                        
+                        # Respond With Input Parameters Included
+                        return f"**Prompt**:```{prompt}```", discord.File(path, spoiler=spoiler)
         
         except Exception as e:
             await ctx.followup.send(content=f"Error : {e}")

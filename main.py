@@ -46,15 +46,9 @@ nouns = []
 with open("Resources/nounlist.txt", 'r') as file:
     nouns = file.read().split("\n")
 
-# Load Prompts
-prompts = []
-with open("Resources/75000 prompts.txt", 'r') as file:
-    prompts = file.read().replace("\"", "").split("\n")
-
 # Load AI Templates
 improve_prompt_template = Template(open("Resources/improve_prompt_template.txt").read())
 new_prompt_template = Template(open("Resources/new_prompt_template.txt").read())
-orientations = ["square", "portrait", "landscape"]
 
 # Startup
 @bot.event
@@ -68,63 +62,41 @@ async def download(ctx: ApplicationContext, url: Option(str, "url to download"))
     await ctx.followup.send(file=discord.File(downloader.download_if(url)))
     log("Downloading", url)
 
-# Generates an Image Using Stable Diffusion
-@bot.slash_command(guilds=scope, description="Uses Stable Diffusion to Generate an Image from Text")
+# Generates an Image with Stable Diffusion
+@bot.slash_command(guilds=scope, description="Generates an image with Stable Diffusion")
 async def generate(ctx: ApplicationContext,
-                   prompt: Option(str, "The postive prompt that describes the image to generate", required=True),
-                   negative_prompt: Option(str, "the negative prompt", required=False), 
-                   orientation: Option(str, "The orientation of the image", required=False, choices=["square", "portrait", "landscape"], default="square"),
-                   steps: Option(int, "The number of steps used to generate the image [10, 50]", required=False,  default=35),
-                   prompt_obediance: Option(int, "The strictly the AI obeys the prompt [1, 30]", required=False, default=9),
-                   sampler: Option(str, "The sampling method used", required=False, choices=["DPM++ 2M Karras", "DDIM"], default="DPM++ 2M Karras"),
-                   seed: Option(int, "The seed for image generation, useful for replicating results", required=False),
-                   improve_prompt: Option(bool, "Whether to improve the prompt using a language model", required=False,  default=False)
-                   ):
-    await ctx.defer()
-
-    if improve_prompt: 
-        prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : prompt}), raw_response=True)
-
-    reply, file = await stable_diffusion.generate(ctx, prompt, negative_prompt, orientation, steps, prompt_obediance, sampler, seed)
-    await ctx.followup.send(reply, file=file)
-
-# Generates a Random Image with Stable Diffusion
-@bot.slash_command(guilds=scope, description="Generates a random image")
-async def random_image(ctx: ApplicationContext,
-                       images_to_generate: Option(int, "The number of images to generate", required=False,  default=1),
-                       improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False),
-                       new_prompt: Option(bool, "Whether to generate the prompt with a language model", required=False,  default=False)
-                       ):
-    
+                   prompt: Option(str, "The prompt for the image, if left empty it will be automatically generated", required=False, default=None),
+                   auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False),
+                   images_to_generate: Option(int, "The number of images to generate", required=False,  default=1),
+                   noun: Option(str, "Base Guidance", required=False, default=None)):
     await ctx.defer()
     
+    flag = not noun 
+
     # Generation Loop
     for _ in range(0, images_to_generate):
-        
-        # Choose Prompt
-        image_prompt = random.choice(prompts).replace("!", "")
-        noun = random.choice(nouns)
+        if flag:
+            noun = random.choice(nouns)
 
-        # Improve Prompt
-        if new_prompt:
-            image_prompt = await llama.generate(query=new_prompt_template.substitute({'Noun' : noun }), raw_response=True)
-        if improve_prompt:
-            image_prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : image_prompt}), raw_response=True)
-
-        # Set Orientation
-        if "portrait" in image_prompt.lower():
-            orientation = "portrait"
+        if prompt:
+            image_prompt = prompt
         else:
-            orientation = random.choice(orientations)
+            image_prompt = await llama.generate(query=new_prompt_template.substitute({'Noun' : noun }), raw_response=True, max_tokens=256)
+            
+        if auto_improve_prompt:
+            image_prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : image_prompt}), raw_response=True, max_tokens=256)
 
-        reply, file = await stable_diffusion.generate(ctx, 
-                                                      prompt=image_prompt, 
-                                                      negative_prompt="", 
-                                                      orientation=orientation,
-                                                      steps=35,
-                                                      prompt_obediance=9, 
-                                                      sampler="DPM++ 2M Karras")
+        image_prompt = image_prompt.replace("!", "").replace("|", ",").replace("_", " ")
+
+        reply, file = await stable_diffusion.generate_turbo(ctx, prompt=image_prompt)
+
+        # Include Source Noun When Relevant
+        if not prompt:
+            reply = f"**Noun:** {noun}\n" + reply
+        
+        # Send Image
         await ctx.followup.send(reply, file=file)
+
     if images_to_generate > 1:
         await ctx.followup.send("All Images Generated")
 
