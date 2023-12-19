@@ -55,7 +55,7 @@ new_prompt_template = Template(open("Resources/new_prompt_template.txt").read())
 async def on_ready():
     print(f"{bot.user} Has Started Up Successfully")
 
-# IF Downloading -- Exclusive to My Personal Server / DMs
+# Video Downloading 
 @bot.slash_command(guilds=[446862283600166927], description="Downloads A Video")
 async def download(ctx: ApplicationContext, url: Option(str, "url to download")):
     await ctx.defer()
@@ -155,7 +155,8 @@ if __name__ == '__main__':
     
     # Using the Scheduler, Queue Setting Bot Status For 15 Seconds After the Bot Starts
     run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
-    
+
+    # Set Normal Status During The Day and Moon Phase During The Night
     if datetime.datetime.now().hour < 17:
         scheduler.add_job(func=set_status, args=[bot], trigger='date', run_date=run_time)
     else:
