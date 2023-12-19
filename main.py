@@ -1,14 +1,9 @@
-# System Libraries
-import asyncio
 import datetime
 import random
-import re
-import time
 
 from pathlib import Path
 from string import Template
 
-# Installed Libraries
 import discord
 from discord import Option, ApplicationContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler

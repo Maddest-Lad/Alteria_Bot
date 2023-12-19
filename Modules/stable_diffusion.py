@@ -17,7 +17,7 @@ class stable_diffusion:
     def __init__(self):
         self.queue = []
         self.api_url = "http://localhost:5002"
-        self.filter_list = open("Resources/filter.txt").read().split("\n")
+        self.filter_list = open("Resources/NSFW_wordlist_filter.txt").read().split("\n")
         
     
     async def interogate_clip(self, image_path: pathlib.Path):
