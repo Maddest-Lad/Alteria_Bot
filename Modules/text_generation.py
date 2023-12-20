@@ -1,15 +1,14 @@
 import aiohttp
 from Modules.user import User
 
-HOSTNAME = "http://localhost:5000"
-CHAT = f"{HOSTNAME}/v1/chat/completions"
-INSTRUCT = f"{HOSTNAME}/v1/completions"
-
+HOSTNAME = "http://localhost:5000" 
+CHAT = f"{HOSTNAME}/v1/chat/completions" # HOSTNAME/docs#/default/openai_chat_completions_v1_chat_completions_post
+INSTRUCT = f"{HOSTNAME}/v1/completions" # HOSTNAME/docs#/default/openai_completions_v1_completions_post
+ 
 HEADERS = {
     "Content-Type": "application/json"
 }
 
-# See The Local Swagger Docs @ HOSTNAME/docs#/default/openai_completions_v1_completions_post
 SHARED_PARAMS = {
   "max_tokens": 512,
   "presence_penalty": 0,
@@ -47,21 +46,21 @@ class TextGeneration:
 
     # Character Chat Mode (Retains History)
     async def character_chat(self, message: str, user: User) -> str:
-        user.add_to_history({"role": "user", "content": message}) 
+        user.add_to_history({"role": "user", "content": message})
 
         data = SHARED_PARAMS | { # Join Params With Chat Specific Values
             "mode": "chat",
             "character": "Assistant_Bot",
-            "history" : user.get_history() # History[0] Is Our Request
+            "messages" : user.get_history() # History[0] Is Our Request
         }
 
-        response = await self._generate(data, endpoint=CHAT)
-        print(response)
+        response_dict = await self._generate(data, endpoint=CHAT)
+        response = response_dict['choices'][0]['message']['content']
 
         # Add Bot Response to History
-        #user.add_to_history({"role": "Assistant_Bot", "content": response})
+        user.add_to_history({"role": "Assistant_Bot", "content": response})
 
-        return "" # response
+        return response
 
 
     async def instruct(self, message: str) -> str:        
@@ -72,11 +71,9 @@ class TextGeneration:
         return response_dict['choices'][0]['text']
 
 
-    async def _generate(self, data: dict, endpoint: str) -> dict:
-        try:
-            async with aiohttp.ClientSession() as session:
-                    async with session.post(url=endpoint, headers=HEADERS, json=data) as response:
-                        response_dict = await response.json()
-                        return response_dict
-        except Exception as e:
-            return f"Error : {e}"
+    async def _generate(self, data: dict, endpoint: str) -> dict: 
+        async with aiohttp.ClientSession() as session: # TODO Implement Pythonic Exception Handling
+                async with session.post(url=endpoint, headers=HEADERS, json=data) as response:
+                    response_dict = await response.json()
+                    return response_dict
+   
