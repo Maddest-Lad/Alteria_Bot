@@ -10,40 +10,36 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Modules
 from Modules.constants import *
-from Modules.downloader import downloader
+from Modules.downloader import Downloader
 from Modules.moon import moon_phase
-from Modules.llama import llama
-from Modules.stable_diffusion import stable_diffusion
-from Modules.summarizer import summarizer
+from Modules.text_generation import TextGeneration
+from Modules.stable_diffusion import StableDiffusion
+from Modules.summarizer import Summarizer
 from Modules.user import User
 from Modules.utils import log, set_status, ocr
 from Modules.youtube_downloader import download_video
-# from Modules.weather import get_current_report
 
 # Initialize Bot
 bot = discord.Bot()
 
-# Initalize Module Class Objects
-stable_diffusion = stable_diffusion()
-llama = llama()
-summarizer = summarizer(llama)
-downloader = downloader() 
-
 # Server Scope [Just Me, Paradox Plaza, Shadow Cabinet]
-scope = [446862283600166927, 439636881194483723, 844325005209632858]
+SCOPE = [446862283600166927, 439636881194483723, 844325005209632858]
  
 # Load Known Users
-data_dir = Path("Data") 
-user_list = [User.from_json(item) for item in data_dir.glob('*.json')]
+DATA_DIRECTORY = Path("Data") 
 
 # Load Nouns
-nouns = []
-with open("Resources/nounlist.txt", 'r') as file:
-    nouns = file.read().split("\n")
+NOUNS = open("Resources/nounlist.txt", 'r').read().split("\n")
 
 # Load AI Templates
-improve_prompt_template = Template(open("Resources/improve_prompt_template.txt").read())
-new_prompt_template = Template(open("Resources/new_prompt_template.txt").read())
+IMPROVE_PROMPT_TEMPLATE = Template(open("Resources/improve_prompt_template.txt").read())
+NEW_PROMPT_TEMPLATE = Template(open("Resources/new_prompt_template.txt").read())
+
+# Initalize Module Class Objects
+stable_diffusion = StableDiffusion()
+text_gen = TextGeneration()
+summarizer = Summarizer(text_gen)
+downloader = Downloader() 
 
 # Startup
 @bot.event
@@ -58,7 +54,7 @@ async def download(ctx: ApplicationContext, url: Option(str, "url to download"))
     log("Downloading", url)
 
 # Generates an Image with Stable Diffusion
-@bot.slash_command(guilds=scope, description="Generates an image with Stable Diffusion")
+@bot.slash_command(guilds=SCOPE, description="Generates an image with Stable Diffusion")
 async def generate(ctx: ApplicationContext,
                    prompt: Option(str, "The prompt for the image, if left empty it will be automatically generated", required=False, default=None),
                    auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False),
@@ -71,15 +67,15 @@ async def generate(ctx: ApplicationContext,
     # Generation Loop
     for _ in range(0, images_to_generate):
         if flag:
-            noun = random.choice(nouns)
+            noun = random.choice(NOUNS)
 
         if prompt:
             image_prompt = prompt
         else:
-            image_prompt = await llama.generate(query=new_prompt_template.substitute({'Noun' : noun }), raw_response=True, max_tokens=256)
+            image_prompt = await text_gen.instruct(query=NEW_PROMPT_TEMPLATE.substitute({'Noun' : noun }))
             
         if auto_improve_prompt:
-            image_prompt = await llama.generate(query=improve_prompt_template.substitute({'Prompt' : image_prompt}), raw_response=True, max_tokens=256)
+            image_prompt = await text_gen.instruct(query=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : image_prompt}))
 
         image_prompt = image_prompt.replace("!", "").replace("|", ",").replace("_", " ")
 
@@ -96,13 +92,21 @@ async def generate(ctx: ApplicationContext,
         await ctx.followup.send("All Images Generated")
 
 # Generates a Response Using Locally Hosted Large Langauge Model  
-@bot.slash_command(guilds=scope, description="Asks Facebook's LLaMA Model a Question - Works Like ChatGPT")
-async def ask_alt(ctx: ApplicationContext, 
-                  message: Option(str, "The postive prompt that describes the image to generate", required=True), 
-                  max_tokens: Option(int, "A general measure that can be considered an aggregation of complexity and length [200-2000]", min_value=200, default=400, max_value=2000, required=False),
-                  min_length: Option(int, "The minimum length for a generation", min_value=0, default=0, max_value=1500)):
+@bot.slash_command(guilds=SCOPE, description="Generates a response to your message using a local language model (Just Like ChatGPT)")
+async def ask_alt(ctx: ApplicationContext, message: Option(str, "The message to send", required=True)):
     await ctx.defer()
-    await ctx.followup.send(await llama.generate(message, max_tokens, min_length))
+    response = await text_gen.instruct(message)
+    
+    await ctx.followup.send(f"{message}```{response}```")
+
+# Generates a Response In a Contextualized Chat   
+@bot.slash_command(guilds=[446862283600166927], description="Chat with an local language model's persona")
+async def chat(ctx: ApplicationContext, message: Option(str, "The message to send", required=True)):
+    await ctx.defer()
+    user = await get_user(ctx)
+    response = await text_gen.character_chat(message, user)
+
+    await ctx.followup.send(f"{message}```{response}```")
 
 # Download a Youtube Video and Import it Into Plex  
 @bot.slash_command(guilds=[446862283600166927], description="Download a Youtube Video and Import it Into Plex")
@@ -112,7 +116,7 @@ async def youtube_to_plex(ctx: ApplicationContext,
     await ctx.followup.send(await download_video(url, media_library_path=Path("/mnt/md0/Plex/Youtube")))
 
 # Uses OCR to Detect Text and Reverse Stable Diffusion to Generate a Description Based on the Current Image Model Loaded
-@bot.slash_command(guilds=scope, description="Uses CLIP and OCR to summarize and image")
+@bot.slash_command(guilds=SCOPE, description="Uses CLIP and OCR to summarize and image")
 async def process_image(ctx: ApplicationContext, url: Option(str, "The url of the image to process", required=True)):
     await ctx.defer()
     # Check URL
@@ -130,7 +134,10 @@ async def process_image(ctx: ApplicationContext, url: Option(str, "The url of th
             await ctx.followup.send(str(e))
         
 # Get User From a Given ApplicationContext
-async def get_user(ctx: ApplicationContext, user_list: list) -> User:
+async def get_user(ctx: ApplicationContext) -> User:
+    # Load Existing Users
+    user_list = [User.from_json(item) for item in DATA_DIRECTORY.glob('*.json')]
+
     for user in user_list:
         if user.id == str(ctx.user.id):
             return user
