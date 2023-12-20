@@ -2,60 +2,39 @@ from pathlib import Path
 import json
 
 DATA_DIR = Path("Data")
+DATA_DIR.mkdir(exist_ok=True)
 
-class User:
-    # Base Discord Info
-    username: str
-    id: str
-
-    # Weather Reporting
-    location: str 
-    report_time: str # By Hour 1-24
-
-    # Text-Generation Chat Usage
-    history: list
-    
-    def __init__(self, id, username, location=None, report_time=None, history=None): 
+class User:  
+    def __init__(self, id: str, username: str, history: list = None): 
         self.id = id        
         self.username = username  
-        self.location = location
-        self.report_time = report_time
-        self.history = history
+        self.history = history if history is not None else []
         
         # Create File For New Users
-        if not Path.joinpath(DATA_DIR, id).exists():
-            self.update_json()
+        if not self.user_file.exists():
+            self.save_to_json()
 
-    # Load From JSON File Constructor
+    @property
+    def user_file(self) -> Path:
+        return DATA_DIR / f"{self.id}.json"
+
     @classmethod 
     def from_json(cls, json_path: Path):
-        with open(json_path, 'r') as json_file:
-            from_json = json.load(json_file)
-            return cls(from_json['id'], from_json['username'], from_json['location'], from_json['report_time'], from_json['history'])
+        """Load a User instance from a JSON file."""
+        with json_path.open('r', encoding='utf-8') as json_file:
+            json_object = json.load(json_file)
+        return cls(json_object['id'], json_object['username'], json_object['history'])
     
-    # Overwrites The Existing File
-    def update_json(self):
-        with open(f"{Path.joinpath(DATA_DIR, self.id)}.json", 'w', encoding='utf-8') as json_file:
-            json.dump(self.__dict__, json_file, skipkeys=True, indent=4)
-            
-    # Weather Scheduler Information - Passing None will Opt Out 
-    def set_location(self, location):
-        self.location = location
-        self.update_json()
-    
-    # PST Incoming Data Should be Convert to PST via utils.convert_to_pacific()
-    def set_report_time(self, report_time):
-        self.report_time = report_time
-        self.update_json()    
+    def save_to_json(self):
+        """Save the current state of the user to a JSON file."""
+        with self.user_file.open('w', encoding='utf-8') as json_file:
+            json.dump(self.__dict__, json_file, indent=4)
 
-    # History Handler
-    def get_history(self):
-        if not self.history:
-            self.history = []
+    def get_history(self) -> list:
+        """Return the user's history."""
         return self.history
 
-    def add_to_history(self, addition):
-        if not self.history:
-            history = []
+    def add_to_history(self, addition: str):
+        """Add an item to the user's history and save it."""
         self.history.append(addition)
-        self.update_json()
+        self.save_to_json()
