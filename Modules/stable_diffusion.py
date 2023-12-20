@@ -12,7 +12,7 @@ import discord
 from PIL import Image
 from timeit import default_timer as timer
 
-class stable_diffusion:
+class StableDiffusion:
     
     def __init__(self):
         self.queue = []

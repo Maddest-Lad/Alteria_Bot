@@ -2,10 +2,10 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from Modules.utils import log
 from Modules.utils import chunk_by
 
-class summarizer():
+class Summarizer():
 
-    def __init__(self, llama):
-        self.llama = llama
+    def __init__(self, text_generator):
+        self.text_generator = text_generator
     
     async def summarize(self, url: str) -> str:
         log("Downloading Subtitles", url)
@@ -17,7 +17,7 @@ class summarizer():
             # Create Unified Text Block
             joined_srt = ' '.join([i['text'].strip() for i in srt])
            
-            response = await self.llama.generate(query=f"### Write Bullet Points Summarizing the following transcript \n ### Transcript \n {joined_srt}", max_tokens=1000, min_length=0, include_query=False)           
+            response = await self.text_generator.instruct(query=f"### Write Bullet Points Summarizing the following transcript \n ### Transcript \n {joined_srt}", max_tokens=1000, min_length=0, include_query=False)           
 
             # Discord 2000 Char Message Limit
             if len(response > 1999):

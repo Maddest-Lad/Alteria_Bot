@@ -9,7 +9,7 @@ import wget
 
 urllib3.disable_warnings()
 
-headers = {
+HEADERS = {
     'Host': 'ifunny.co',
     'Upgrade-Insecure-Requests': '1',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36',
@@ -18,14 +18,14 @@ headers = {
     'Connection': 'close',
 }
 
-params = {
+PARAMS = {
     's': 'cl',
 }
 
-class downloader():
+class Downloader():
 
     def download_if(self, url: str):
-        response = requests.get(url, params=params, headers=headers, verify=False).text
+        response = requests.get(url, params=PARAMS, headers=HEADERS, verify=False).text
 
         # Search for the video tags
         result = re.search('{start}(.*){end}'.format(start='<video', end='</video>'), response).group(1)
