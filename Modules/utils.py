@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image
 from pytesseract import pytesseract
 
-from Modules.constants import status_playing, status_watching
+from Modules.constants import STATUS_PLAYING, STATUS_WATCHING
 
 def log(*value):
     log_entry = {"date": datetime.now().isoformat(), "value": json.dumps(value) } 
@@ -23,10 +23,10 @@ async def clear_status(bot):
 async def set_status(bot):
     if bool(getrandbits(1)):
         # Watching
-        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=choice(status_watching)))
+        await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=choice(STATUS_WATCHING)))
     else:
         # Playing
-        await bot.change_presence(activity=discord.Game(name=choice(status_playing)))
+        await bot.change_presence(activity=discord.Game(name=choice(STATUS_PLAYING)))
 
 def convert_to_pacific(time_zone: str, hours: int) -> int:
     # Calculate the offset in hours from the Pacific time zone to the input time zone

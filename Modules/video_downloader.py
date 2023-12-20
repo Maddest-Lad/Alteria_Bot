@@ -1,13 +1,13 @@
-import os
-import requests
+
 import pathlib
 import re
 import subprocess
-import urllib3
 import uuid
 import wget
+from enum import Enum
 
-urllib3.disable_warnings()
+from Modules.SessionHandler import SessionHandler
+
 
 HEADERS = {
     'Host': 'ifunny.co',
@@ -22,9 +22,17 @@ PARAMS = {
     's': 'cl',
 }
 
-class Downloader():
 
-    def download_if(self, url: str):
+class VideoDownloader(SessionHandler):
+    """Downloads Youtube Shorts, Instagram Reels and Tiktok Videos"""
+
+    async def download(url :str) -> pathlib.Path:
+
+        match url.endswith()
+
+
+
+    async def download_if(self, url: str):
         response = requests.get(url, params=PARAMS, headers=HEADERS, verify=False).text
 
         # Search for the video tags

@@ -14,7 +14,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Modules
 from Modules.constants import *
-from Modules.downloader import Downloader
+from Modules.video_downloader import Downloader
 from Modules.moon import moon_phase
 from Modules.text_generation import TextGenerator
 from Modules.stable_diffusion import StableDiffusion
@@ -62,17 +62,13 @@ async def generate(ctx: ApplicationContext,
         if prompt:
             image_prompt = prompt
         else:
-            async with text_generator: 
-                image_prompt = await text_generator.generate_instruct_response(message=NEW_PROMPT_TEMPLATE.substitute({'Noun' : noun }))
+            image_prompt = await text_generator.generate_instruct_response(message=NEW_PROMPT_TEMPLATE.substitute({'Noun' : noun }))
            
         if auto_improve_prompt:
-            async with text_generator: 
-                image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : image_prompt}))
+            image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : image_prompt}))
 
         image_prompt = image_prompt.replace("!", "").replace("|", ",").replace("_", " ")
-
-        async with stable_diffusion:
-            reply, file = await stable_diffusion.generate_image(prompt=image_prompt)
+        reply, file = await stable_diffusion.generate_image(prompt=image_prompt)
 
         # Include Source Noun When Relevant
         if not prompt:
@@ -88,8 +84,7 @@ async def generate(ctx: ApplicationContext,
 async def ask_alt(ctx: ApplicationContext, message: Option(str, "The message to send", required=True)):
     """Generates a Response Using Locally Hosted Large Langauge Model"""
     await ctx.defer()
-    async with text_generator:
-        response = await text_generator.generate_instruct_response(message=message)
+    response = await text_generator.generate_instruct_response(message=message)
     
     await ctx.followup.send(f"{message}```{response}```")
   
@@ -98,9 +93,7 @@ async def chat(ctx: ApplicationContext, message: Option(str, "The message to sen
     """Generates a Response In a Contextualized Chat """
     await ctx.defer()
     user = await get_user_object(ctx)
-
-    async with text_generator:
-        response = await text_generator.generate_chat_response(message=message, user=user)
+    response = await text_generator.generate_chat_response(message=message, user=user)
 
     await ctx.followup.send(f"{message}```{response}```")
 
@@ -116,9 +109,7 @@ async def process_image(ctx: ApplicationContext, url: Option(str, "The url of th
             image_path = downloader.download_image(url)
             # Parse OCR Text and CLIP Description from Image
             ocr_text = await ocr(image_path)
-
-            async with stable_diffusion:
-                clip_description = await stable_diffusion.interogate_clip(image_path)
+            clip_description = await stable_diffusion.interogate_clip(image_path)
             
             await ctx.followup.send(f"""Optical Character Recognition (OCR):\n```{ocr_text}```CLIP:\n```{clip_description}```""", file=discord.File(image_path))
         except Exception as e:
@@ -130,18 +121,6 @@ async def youtube_to_plex(ctx: ApplicationContext, url: Option(str, "The URL of 
     await ctx.defer()
     await ctx.followup.send(await download_video(url, media_library_path=Path("/mnt/md0/Plex/Youtube")))
 
-# Summarizes a Youtube Video - Disabled Due to LLM Limitations 
-@bot.slash_command(guilds=SCOPE, description="Uses /Ask_Alt and scraped video captions to summarize the video")
-async def summarize_video(ctx: ApplicationContext, url: Option(str, "The url of the video to summarize", required=True)):
-    await ctx.defer()
-
-    async with text_generator:
-        summary: list = await summarize(text_generator, url)
-
-        for chunk in summary:
-            await ctx.followup.send(chunk)
-            time.sleep(0.25)
-        
 async def get_user_object(ctx: ApplicationContext) -> User:
     """Get User From a Given ApplicationContext"""
     user_file_path = DATA_DIRECTORY / f"{ctx.user.id}.json"

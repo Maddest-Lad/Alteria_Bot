@@ -2,12 +2,12 @@ import discord
 import math, decimal, datetime
 
 async def moon_phase(bot):
-    dec = decimal.Decimal
-
     """
     Adapted from moonphase.py by Sean B. Palmer, inamidst.com
     """
-    
+
+    dec = decimal.Decimal
+
     def position(now=None): 
         if now is None: 
             now = datetime.datetime.now()

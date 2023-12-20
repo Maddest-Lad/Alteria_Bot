@@ -1,6 +1,6 @@
 import aiohttp
 from Modules.user import User
-from Modules.SessionHandler import AioHttpSessionHandler
+from Modules.SessionHandler import SessionHandler
 
 # Constants
 API_URL = "http://localhost:5000"
@@ -40,7 +40,7 @@ SHARED_PARAMS = {
   "skip_special_tokens": True,
 }
 
-class TextGenerator(AioHttpSessionHandler):
+class TextGenerator(SessionHandler):
     """Class for generating text using a local Large Language Model (LLM)"""
 
     async def generate_chat_response(self, message: str, user: User) -> str:
@@ -62,7 +62,7 @@ class TextGenerator(AioHttpSessionHandler):
             "messages" : user.get_history()
         }
 
-        response_dict = await self._make_request(data, CHAT_ENDPOINT )
+        response_dict = await self._make_post_request(CHAT_ENDPOINT, data=data)
         response = response_dict['choices'][0]['message']['content']
         user.add_to_history({"role": "Assistant_Bot", "content": response})
 
@@ -79,6 +79,6 @@ class TextGenerator(AioHttpSessionHandler):
             str: The LLM response
         """
         data = {**SHARED_PARAMS, "prompt" : message}
-        response_dict = await self._make_request(data, INSTRUCT_ENDPOINT)
+        response_dict = await self._make_post_request(INSTRUCT_ENDPOINT, data=data)
         return response_dict['choices'][0]['text']
 
