@@ -1,9 +1,11 @@
+import aiofiles
 import datetime
-import random
-
+import json
 from pathlib import Path
+import random
 from string import Template
 
+# Main Library https://github.com/Pycord-Development/pycord
 import discord
 from discord import Option, ApplicationContext
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -135,12 +137,13 @@ async def process_image(ctx: ApplicationContext, url: Option(str, "The url of th
         
 # Get User From a Given ApplicationContext
 async def get_user(ctx: ApplicationContext) -> User:
-    # Load Existing Users
-    user_list = [User.from_json(item) for item in DATA_DIRECTORY.glob('*.json')]
+    user_file_path = DATA_DIRECTORY / f"{ctx.user.id}.json"
 
-    for user in user_list:
-        if user.id == str(ctx.user.id):
-            return user
+    if user_file_path.exists():
+        async with aiofiles.open(user_file_path, mode='r', encoding='utf-8') as user_file:
+            user_data = json.loads(await user_file.read())
+            return User(user_data['id'], user_data['username'], user_data['history'])
+        
     return User(str(ctx.user.id), ctx.user.name)
     
 if __name__ == '__main__':   
