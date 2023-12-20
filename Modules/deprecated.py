@@ -32,15 +32,6 @@ async def daily_weather(ctx: ApplicationContext,
     
     await ctx.respond(random.choice(sarcastic_responses), ephemeral=True)
 
-# Summarizes a Youtube Video - Disabled Due to LLM Limitations 
-@bot.slash_command(guilds=scope, description="Uses /Ask_Alt and scraped video captions to summarize the video")
-async def summarize_video(ctx: ApplicationContext, url: Option(str, "The url of the video to summarize", required=True)):
-    await ctx.defer()
-    summary: list = await summarizer.summarize(url)
-
-    for chunk in summary:
-        await ctx.followup.send(chunk)
-        time.sleep(0.25)
 
 class llama:
     

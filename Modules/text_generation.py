@@ -1,14 +1,12 @@
 import aiohttp
 from Modules.user import User
+from Modules.SessionHandler import AioHttpSessionHandler
 
-HOSTNAME = "http://localhost:5000" 
-CHAT = f"{HOSTNAME}/v1/chat/completions" # HOSTNAME/docs#/default/openai_chat_completions_v1_chat_completions_post
-INSTRUCT = f"{HOSTNAME}/v1/completions" # HOSTNAME/docs#/default/openai_completions_v1_completions_post
- 
-HEADERS = {
-    "Content-Type": "application/json"
-}
-
+# Constants
+API_URL = "http://localhost:5000"
+CHAT_ENDPOINT = f"{API_URL}/v1/chat/completions"
+INSTRUCT_ENDPOINT = f"{API_URL}/v1/completions"
+HEADERS = {"Content-Type": "application/json"}
 SHARED_PARAMS = {
   "max_tokens": 512,
   "presence_penalty": 0,
@@ -42,38 +40,45 @@ SHARED_PARAMS = {
   "skip_special_tokens": True,
 }
 
-class TextGeneration:
+class TextGenerator(AioHttpSessionHandler):
+    """Class for generating text using a local Large Language Model (LLM)"""
 
-    # Character Chat Mode (Retains History)
-    async def character_chat(self, message: str, user: User) -> str:
+    async def generate_chat_response(self, message: str, user: User) -> str:
+        """
+        Sends a message to the LLM and returns it's response 
+
+        Args:
+            message (str): The user query
+            user (User): The user object to retrieve history from
+
+        Returns:
+            str: The LLM response
+        """
         user.add_to_history({"role": "user", "content": message})
-
-        data = SHARED_PARAMS | { # Join Params With Chat Specific Values
+        data = {
+            **SHARED_PARAMS,
             "mode": "chat",
             "character": "Assistant_Bot",
-            "messages" : user.get_history() # History[0] Is Our Request
+            "messages" : user.get_history()
         }
 
-        response_dict = await self._generate(data, endpoint=CHAT)
+        response_dict = await self._make_request(data, CHAT_ENDPOINT )
         response = response_dict['choices'][0]['message']['content']
-
-        # Add Bot Response to History
         user.add_to_history({"role": "Assistant_Bot", "content": response})
 
         return response
 
+    async def generate_instruct_response(self, message: str) -> str:
+        """
+        Sends a message to the LLM and returns it's response 
 
-    async def instruct(self, message: str) -> str:        
-        data =  SHARED_PARAMS | { # Join Params With Instruct Request
-            "prompt" : message
-        }
-        response_dict = await self._generate(data, endpoint=INSTRUCT)
+        Args:
+            message (str): The user query
+
+        Returns:
+            str: The LLM response
+        """
+        data = {**SHARED_PARAMS, "prompt" : message}
+        response_dict = await self._make_request(data, INSTRUCT_ENDPOINT)
         return response_dict['choices'][0]['text']
 
-
-    async def _generate(self, data: dict, endpoint: str) -> dict: 
-        async with aiohttp.ClientSession() as session: # TODO Implement Pythonic Exception Handling
-                async with session.post(url=endpoint, headers=HEADERS, json=data) as response:
-                    response_dict = await response.json()
-                    return response_dict
-   

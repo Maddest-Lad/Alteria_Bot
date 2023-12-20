@@ -4,7 +4,8 @@ import json
 DATA_DIR = Path("Data")
 DATA_DIR.mkdir(exist_ok=True)
 
-class User:  
+class User:
+    """User Handler, Responisble for JSON Serialization/Deserialization"""
     def __init__(self, id: str, username: str, history: list = None): 
         self.id = id        
         self.username = username  
@@ -16,6 +17,7 @@ class User:
 
     @property
     def user_file(self) -> Path:
+        """Represents a User's JSON File"""
         return DATA_DIR / f"{self.id}.json"
 
     @classmethod 
@@ -34,7 +36,7 @@ class User:
         """Return the user's history."""
         return self.history
 
-    def add_to_history(self, addition: str):
+    def add_to_history(self, addition: dict):
         """Add an item to the user's history and save it."""
         self.history.append(addition)
         self.save_to_json()
