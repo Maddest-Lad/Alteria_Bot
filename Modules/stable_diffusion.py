@@ -6,7 +6,7 @@ import uuid
 from PIL import Image
 
 from Modules.constants import SD_BASE_NEGATIVE_PROMPT, SD_IMAGE_PATH
-from Modules.SessionHandler import SessionHandler
+from Modules.session_handler import SessionHandler
 
 # Constants
 API_URL = "http://localhost:5002"
@@ -35,7 +35,7 @@ class StableDiffusion(SessionHandler):
             "model": "clip"
         }
 
-        response_dict = await self._make_post_request(INTERROGATE_ENDPOINT, data=data)
+        response_dict = await self._make_post_request(INTERROGATE_ENDPOINT, data=data).json()
         return response_dict['caption']
 
     async def generate_image(self, prompt: str) -> tuple[str, str]:
@@ -75,7 +75,7 @@ class StableDiffusion(SessionHandler):
             "steps" : 15,
         }
 
-        response_dict = self._make_post_request(TEXT_TO_IMG_ENDPOINT, data=data)
+        response_dict = self._make_post_request(TEXT_TO_IMG_ENDPOINT, data=data).json()
       
         # Load Image From Request
         image = Image.open(io.BytesIO(base64.b64decode(response_dict['images'][0].split(",",1)[0])))

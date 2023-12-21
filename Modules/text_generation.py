@@ -1,6 +1,6 @@
 import aiohttp
 from Modules.user import User
-from Modules.SessionHandler import SessionHandler
+from Modules.session_handler import SessionHandler
 
 # Constants
 API_URL = "http://localhost:5000"
@@ -62,7 +62,7 @@ class TextGenerator(SessionHandler):
             "messages" : user.get_history()
         }
 
-        response_dict = await self._make_post_request(CHAT_ENDPOINT, data=data)
+        response_dict = await self._make_post_request(CHAT_ENDPOINT, data=data).json()
         response = response_dict['choices'][0]['message']['content']
         user.add_to_history({"role": "Assistant_Bot", "content": response})
 
@@ -79,6 +79,6 @@ class TextGenerator(SessionHandler):
             str: The LLM response
         """
         data = {**SHARED_PARAMS, "prompt" : message}
-        response_dict = await self._make_post_request(INSTRUCT_ENDPOINT, data=data)
+        response_dict = await self._make_post_request(INSTRUCT_ENDPOINT, data=data).json()
         return response_dict['choices'][0]['text']
 

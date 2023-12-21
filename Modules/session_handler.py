@@ -2,7 +2,6 @@ import aiohttp
 
 class SessionHandler():
     """Parent class to manage API interactions with aiohttp.
-       
        Each object inheriting from SessionHandler will have it's own Individual Session Pool
     """
 
@@ -20,7 +19,7 @@ class SessionHandler():
             await self.session.close()
             self.session = None
 
-    async def _make_post_request(self, endpoint: str, data: dict = None, headers: dict = None) -> dict:
+    async def _make_post_request(self, endpoint: str, data: dict = None, headers: dict = None) -> aiohttp.ClientResponse:
         """
         Makes an HTTP POST request to the specified endpoint
 
@@ -38,12 +37,12 @@ class SessionHandler():
         try:
             async with self.session.post(url=endpoint, json=data, headers=headers) as response:
                 response.raise_for_status()
-                return await response.json()
+                return await response
         except aiohttp.ClientError as e:
             print(f"An aiohttp error has occurred: {e}")
             raise
 
-    async def _make_get_request(self, endpoint: str, data: dict = None, headers: dict = None) -> dict:
+    async def _make_get_request(self, endpoint: str, data: dict = None, headers: dict = None) -> aiohttp.ClientResponse:
         """
         Makes an HTTP GET request to the specified endpoint
 
@@ -61,7 +60,7 @@ class SessionHandler():
         try:
             async with self.session.get(url=endpoint, json=data, headers=headers) as response:
                 response.raise_for_status()
-                return await response.json()
+                return await response
         except aiohttp.ClientError as e:
             print(f"An aiohttp error has occurred: {e}")
             raise

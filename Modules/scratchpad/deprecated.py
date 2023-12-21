@@ -93,3 +93,10 @@ class llama:
                     
         except Exception as e:
             return f"Error : {e}"
+
+
+@bot.slash_command(guilds=[446862283600166927], description="Download a Youtube Video and Import it Into Plex")
+async def youtube_to_plex(ctx: ApplicationContext, url: Option(str, "The URL of the Youtube Video", required=True)):
+    """Download a Youtube Video and Import it Into Plex"""
+    await ctx.defer()
+    await ctx.followup.send(await download_video(url, media_library_path=Path("/mnt/md0/Plex/Youtube")))

@@ -1,5 +1,6 @@
 aiofiles
 aiohttp
+aiopytesseract
 aiosignal
 aio-mc-rcon
 apscheduler
@@ -13,7 +14,6 @@ idna
 multidict
 pillow
 py-cord
-pytesseract
 requests
 typing_extensions
 urllib3

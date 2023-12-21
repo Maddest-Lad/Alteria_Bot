@@ -14,13 +14,12 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Modules
 from Modules.constants import *
-from Modules.video_downloader import Downloader
 from Modules.moon import moon_phase
 from Modules.text_generation import TextGenerator
 from Modules.stable_diffusion import StableDiffusion
-from Modules.summarizer_youtube_video import summarize
 from Modules.user import User
-from Modules.utils import set_status, ocr
+from Modules.utils import optical_character_recognition
+from Modules.discord_utils import set_bot_status, clear_bot_status 
 from Modules.youtube_downloader import download_video
 
 # Initialize Bot
@@ -28,9 +27,7 @@ bot = discord.Bot()
 
 # Initalize aiohttp sesison classes
 text_generator = TextGenerator()
-stable_diffusion = StableDiffusion()
-downloader = Downloader() 
-
+stable_diffusion = StableDiffusion() 
 
 @bot.event
 async def on_ready():
@@ -108,18 +105,14 @@ async def process_image(ctx: ApplicationContext, url: Option(str, "The url of th
         try:
             image_path = downloader.download_image(url)
             # Parse OCR Text and CLIP Description from Image
-            ocr_text = await ocr(image_path)
+            ocr_text = await optical_character_recognition(image_path)
             clip_description = await stable_diffusion.interogate_clip(image_path)
             
             await ctx.followup.send(f"""Optical Character Recognition (OCR):\n```{ocr_text}```CLIP:\n```{clip_description}```""", file=discord.File(image_path))
         except Exception as e:
             await ctx.followup.send(str(e))
 
-@bot.slash_command(guilds=[446862283600166927], description="Download a Youtube Video and Import it Into Plex")
-async def youtube_to_plex(ctx: ApplicationContext, url: Option(str, "The URL of the Youtube Video", required=True)):
-    """Download a Youtube Video and Import it Into Plex"""
-    await ctx.defer()
-    await ctx.followup.send(await download_video(url, media_library_path=Path("/mnt/md0/Plex/Youtube")))
+
 
 async def get_user_object(ctx: ApplicationContext) -> User:
     """Get User From a Given ApplicationContext"""
@@ -142,14 +135,14 @@ if __name__ == '__main__':
 
     # Register Jobs
     scheduler.add_job(func=moon_phase, args=[bot], trigger='cron', hour=17) # Turn on @ 5pm PST 
-    scheduler.add_job(func=set_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
+    scheduler.add_job(func=set_bot_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
 
     # Using the Scheduler, Queue Setting Bot Status For 15 Seconds After the Bot Starts
     run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
 
     # Set Normal Status During The Day and Moon Phase During The Night
     if datetime.datetime.now().hour < 17:
-        scheduler.add_job(func=set_status, args=[bot], trigger='date', run_date=run_time)
+        scheduler.add_job(func=set_bot_status, args=[bot], trigger='date', run_date=run_time)
     else:
         scheduler.add_job(func=moon_phase, args=[bot], trigger='date', run_date=run_time)
 
