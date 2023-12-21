@@ -10,11 +10,10 @@ async def clear_bot_status(bot: Bot):
     await bot.change_presence(activity=Activity())
 
 async def set_bot_status(bot: Bot):
-    """Set's The Bot's Status to a Random Message"""
+    """Set's The Bot's Status"""
     if bool(getrandbits(1)):
         await bot.change_presence(activity=Activity(type=ActivityType.watching,name=choice(STATUS_WATCHING)))
     else:
-        # Playing
         await bot.change_presence(activity=Game(name=choice(STATUS_PLAYING)))
 
 # Constants
@@ -55,10 +54,11 @@ def calculate_moon_phase() -> tuple:
     roundedpos = round(float(pos), 3)
     return current_phase, roundedpos
 
-async def set_status_moon_phase(bot: Bot):
+async def set_moon_phase_status(bot: Bot):
     """Set's the Bot's status of be the moon phase"""
     phase, position = calculate_moon_phase()
-    await bot.change_presence(actvity=Activity(
-        type=ActivityType.watching, name=f"{phase[1]}{phase[0]}",
+    status_message = f"{phase[1]}{phase[0]}"
+    await bot.change_presence(activity=Activity(
+        type=ActivityType.watching, name=status_message,
         details=f"The Moon's Current Illumination is {position}")
     )

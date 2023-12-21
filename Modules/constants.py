@@ -20,4 +20,4 @@ NEW_PROMPT_TEMPLATE = Template(open("Resources/new_prompt_template.txt").read())
 # Stable Diffusion
 NSFW_FILTER_LIST = open("Resources/NSFW_wordlist_filter.txt").read().split("\n")
 SD_BASE_NEGATIVE_PROMPT = "bad-anime-horror bad_prompt_version2 verybadimagenegative_v1.3 negative_hand-neg <lora:EasyFix:0.5>"
-SD_IMAGE_PATH = Path("Media/StableDiffusion")
+SD_IMAGE_PATH =  MEDIA_DIRECTORY / "StableDiffusion"

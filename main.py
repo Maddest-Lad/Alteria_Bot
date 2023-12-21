@@ -1,10 +1,7 @@
-import asyncio
 import datetime
 import json
 from pathlib import Path
-import time
 import random
-
 import aiofiles
 
 # Main Library https://github.com/Pycord-Development/pycord
@@ -14,33 +11,34 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Modules
 from Modules.constants import *
-from Modules.moon import moon_phase
 from Modules.text_generation import TextGenerator
 from Modules.stable_diffusion import StableDiffusion
+from Modules.download_manager import DownloadManager
 from Modules.user import User
 from Modules.utils import optical_character_recognition
-from Modules.discord_utils import set_bot_status, clear_bot_status 
-from Modules.youtube_downloader import download_video
+from Modules.discord_utils import set_bot_status, set_moon_phase_status
 
 # Initialize Bot
 bot = discord.Bot()
 
-# Initalize aiohttp sesison classes
+# Initalize aiohttp sesison handlers
 text_generator = TextGenerator()
-stable_diffusion = StableDiffusion() 
+stable_diffusion = StableDiffusion()
+download_manager = DownloadManager()
 
 @bot.event
 async def on_ready():
     """Pycord Startup Callback"""
     print(f"{bot.user} Has Started Up Successfully")
 
-@bot.slash_command(guilds=[446862283600166927], description="Downloads A Video")
+@bot.slash_command(guilds=SCOPE, description="Downloads A Video")
 async def download(ctx: ApplicationContext, url: Option(str, "url to download")):
     """Slash Command to Download a Video"""
     await ctx.defer()
-    await ctx.followup.send(file=discord.File(downloader.download_if(url)))
+    video_path = await download_manager.download_video(url)
+    await ctx.followup.send(file=discord.File(video_path))
 
-@bot.slash_command(guilds=SCOPE, description="Generates an image with Stable Diffusion")
+@bot.slash_command(guilds=SCOPE, description="Generates an Image with Stable Diffusion")
 async def generate(ctx: ApplicationContext,
                    prompt: Option(str, "The prompt for the image, if left empty it will be automatically generated", required=False, default=None),
                    auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False),
@@ -48,7 +46,7 @@ async def generate(ctx: ApplicationContext,
                    noun: Option(str, "Base Guidance", required=False, default=None)):
     """Generates an Image with Stable Diffusion"""
     await ctx.defer()
-    
+
     flag = not noun
 
     # Generation Loop
@@ -60,19 +58,14 @@ async def generate(ctx: ApplicationContext,
             image_prompt = prompt
         else:
             image_prompt = await text_generator.generate_instruct_response(message=NEW_PROMPT_TEMPLATE.substitute({'Noun' : noun }))
-           
+
         if auto_improve_prompt:
             image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : image_prompt}))
 
         image_prompt = image_prompt.replace("!", "").replace("|", ",").replace("_", " ")
-        reply, file = await stable_diffusion.generate_image(prompt=image_prompt)
 
-        # Include Source Noun When Relevant
-        if not prompt:
-            reply = f"**Noun:** {noun}\n" + reply
-        
-        # Send Image
-        await ctx.followup.send(reply, file=file)
+        file = await stable_diffusion.generate_image(prompt=image_prompt)
+        await ctx.followup.send(f"**Prompt**:```{image_prompt}```", file=discord.File(file))
 
     if images_to_generate > 1:
         await ctx.followup.send("All Images Generated")
@@ -82,9 +75,9 @@ async def ask_alt(ctx: ApplicationContext, message: Option(str, "The message to 
     """Generates a Response Using Locally Hosted Large Langauge Model"""
     await ctx.defer()
     response = await text_generator.generate_instruct_response(message=message)
-    
+ 
     await ctx.followup.send(f"{message}```{response}```")
-  
+
 @bot.slash_command(guilds=[446862283600166927], description="Chat with an local language model's persona")
 async def chat(ctx: ApplicationContext, message: Option(str, "The message to send", required=True)):
     """Generates a Response In a Contextualized Chat """
@@ -98,21 +91,13 @@ async def chat(ctx: ApplicationContext, message: Option(str, "The message to sen
 async def process_image(ctx: ApplicationContext, url: Option(str, "The url of the image to process", required=True)):
     """Generates desciptions of an image using OCR and CLIP"""
     await ctx.defer()
-    # Check URL
-    if not any(filetype in url for filetype in ["png", "jpg", "webm", "jpeg"]): # Hacky
-        await ctx.followup.send("Image must be a PNG, JPG/JPEG or WEBM")
-    else:
-        try:
-            image_path = downloader.download_image(url)
-            # Parse OCR Text and CLIP Description from Image
-            ocr_text = await optical_character_recognition(image_path)
-            clip_description = await stable_diffusion.interogate_clip(image_path)
-            
-            await ctx.followup.send(f"""Optical Character Recognition (OCR):\n```{ocr_text}```CLIP:\n```{clip_description}```""", file=discord.File(image_path))
-        except Exception as e:
-            await ctx.followup.send(str(e))
+    image_path = await download_manager.download_image(url)
 
+    ocr_text = await optical_character_recognition(image_path)
+    clip_description = await stable_diffusion.interogate_clip(image_path)
 
+    await ctx.followup.send(f"""Optical Character Recognition:\n```{ocr_text}```CLIP:\n```{clip_description}```""",
+                             file=discord.File(image_path))
 
 async def get_user_object(ctx: ApplicationContext) -> User:
     """Get User From a Given ApplicationContext"""
@@ -122,7 +107,7 @@ async def get_user_object(ctx: ApplicationContext) -> User:
         async with aiofiles.open(user_file_path, mode='r', encoding='utf-8') as user_file:
             user_data = json.loads(await user_file.read())
             return User(user_data['id'], user_data['username'], user_data['history'])    
-    
+
     return User(str(ctx.user.id), ctx.user.name)
  
 if __name__ == '__main__':
@@ -130,12 +115,12 @@ if __name__ == '__main__':
     # Initialize Logs
     Path("Logs").mkdir(exist_ok=True)
 
-    # Initalize the Scheduler
+    # Initialize Scheduler
     scheduler = AsyncIOScheduler(daemon=True)
 
-    # Register Jobs
-    scheduler.add_job(func=moon_phase, args=[bot], trigger='cron', hour=17) # Turn on @ 5pm PST 
-    scheduler.add_job(func=set_bot_status, args=[bot], trigger='cron', hour=5) # Turn off @ 5am PST
+    # Register Jobs -  swapping between moon phase and status messages every 12 hours (5pm/5am PST) 
+    scheduler.add_job(func=set_moon_phase_status, args=[bot], trigger='cron', hour=17)
+    scheduler.add_job(func=set_bot_status, args=[bot], trigger='cron', hour=5)
 
     # Using the Scheduler, Queue Setting Bot Status For 15 Seconds After the Bot Starts
     run_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
@@ -144,11 +129,11 @@ if __name__ == '__main__':
     if datetime.datetime.now().hour < 17:
         scheduler.add_job(func=set_bot_status, args=[bot], trigger='date', run_date=run_time)
     else:
-        scheduler.add_job(func=moon_phase, args=[bot], trigger='date', run_date=run_time)
+        scheduler.add_job(func=set_moon_phase_status, args=[bot], trigger='date', run_date=run_time)
 
     # Start Scheduler
     scheduler.start()
 
-    # Start Bot
-    bot.start(open("token.secret", "r").read())
+    # Start Bot (Blocking)
+    bot.run(open("token.secret", "r").read())
 

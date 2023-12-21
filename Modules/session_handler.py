@@ -19,7 +19,7 @@ class SessionHandler():
             await self.session.close()
             self.session = None
 
-    async def _make_post_request(self, endpoint: str, data: dict = None, headers: dict = None) -> aiohttp.ClientResponse:
+    async def _make_post_request(self, endpoint: str, data: dict = None, headers: dict = None) -> dict:
         """
         Makes an HTTP POST request to the specified endpoint
 
@@ -32,17 +32,17 @@ class SessionHandler():
             dict: The response from the API
         """
         if not self.session:
-            self.initialize_session()
+            await self.initialize_session()
 
         try:
             async with self.session.post(url=endpoint, json=data, headers=headers) as response:
                 response.raise_for_status()
-                return await response
+                return await response.json()
         except aiohttp.ClientError as e:
             print(f"An aiohttp error has occurred: {e}")
             raise
 
-    async def _make_get_request(self, endpoint: str, data: dict = None, headers: dict = None) -> aiohttp.ClientResponse:
+    async def _make_get_request(self, endpoint: str, data: dict = None, headers: dict = None) -> dict:
         """
         Makes an HTTP GET request to the specified endpoint
 
@@ -55,12 +55,12 @@ class SessionHandler():
             dict: The response from the API
         """
         if not self.session:
-            self.initialize_session()
+            await self.initialize_session()
 
         try:
             async with self.session.get(url=endpoint, json=data, headers=headers) as response:
                 response.raise_for_status()
-                return await response
+                return await response.read()
         except aiohttp.ClientError as e:
             print(f"An aiohttp error has occurred: {e}")
             raise

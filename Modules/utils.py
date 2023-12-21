@@ -22,4 +22,4 @@ def chunk_by(text: str, chunk_size: int):
 
 async def optical_character_recognition(image_path: Path) -> str:
     """Uses Optical Character Recognition (OCR) to extract text from an Image"""
-    return await aiopytesseract.image_to_string(image_path)
+    return await aiopytesseract.image_to_string(str(image_path))

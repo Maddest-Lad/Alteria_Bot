@@ -62,11 +62,12 @@ class TextGenerator(SessionHandler):
             "messages" : user.get_history()
         }
 
-        response_dict = await self._make_post_request(CHAT_ENDPOINT, data=data).json()
-        response = response_dict['choices'][0]['message']['content']
-        user.add_to_history({"role": "Assistant_Bot", "content": response})
+        response_dict = await self._make_post_request(CHAT_ENDPOINT, data=data)
 
-        return response
+        llm_reply = response_dict['choices'][0]['message']['content']
+        user.add_to_history({"role": "Assistant_Bot", "content": llm_reply})
+
+        return llm_reply
 
     async def generate_instruct_response(self, message: str) -> str:
         """
@@ -79,6 +80,6 @@ class TextGenerator(SessionHandler):
             str: The LLM response
         """
         data = {**SHARED_PARAMS, "prompt" : message}
-        response_dict = await self._make_post_request(INSTRUCT_ENDPOINT, data=data).json()
+        response_dict = await self._make_post_request(INSTRUCT_ENDPOINT, data=data)
         return response_dict['choices'][0]['text']
 

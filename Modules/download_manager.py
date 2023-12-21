@@ -17,46 +17,46 @@ class DownloadManager(SessionHandler):
         filetype = match.group(1)
         outpath = MEDIA_DIRECTORY / f"{str(uuid.uuid4())}.{filetype}"
 
-        response = await self._make_get_request(url)
-          
+        binary_response = await self._make_get_request(url)
+         
         with open(outpath, 'wb') as file:
-            file.write(await response.content.read())
+            file.write(binary_response)
 
         return outpath
 
     async def download_video(self, url :str) -> Path:
         """Calls Download Functions for Youtube Shorts, Tiktok, Instagram Reels, Reddit Videos, iFunny Videos"""
-        base_url = remove_protocol_prefixes(url)
+        base_url = self.remove_protocol_prefixes(url)
 
-        match base_url:
-            case url.startswith("youtube.com/shorts"):
-                return self.download_short(url)
-          
-            case url.startswith("tiktok.com"):
-                return self.download_tiktok(url)
+        if url.startswith("youtube.com/shorts"):
+            return self._download_short(url)
+         
+        elif url.startswith("tiktok.com"):
+            return self._download_tiktok(url)
 
-            case url.startswith("instagram.com/reels"):
-                return self.download_reel(url)
+        elif url.startswith("instagram.com/reels"):
+            return self._download_reel(url)
 
-            case url.startswith("ifunny.co"):
-                return self.download_if(url)
-                 
-            case _:
-                raise ValueError(f"Could not detect video provider from the {url}")
+        elif url.startswith("ifunny.co"):
+            return self._download_if(url)
+        
+        else:        
+            raise ValueError(f"Could not detect video provider from the {url}")
 
     # Youtube
-    async def download_short(self, url: str) -> Path:
-        return
+    async def _download_short(self, url: str) -> Path:
+        raise NotImplementedError
 
     # Instagram
-    async def download_reel(self, url) -> Path:
-        return
+    async def _download_reel(self, url) -> Path:
+        raise NotImplementedError
 
     # Tiktok
-    async def download_tiktok(self, url: str) -> Path:
-        return
+    async def _download_tiktok(self, url: str) -> Path:
+        raise NotImplementedError
 
-    async def download_if(self, url: str) -> Path:
+    # iFunny
+    async def _download_if(self, url: str) -> Path:
         """Downloads a Video, Pulling the source URL from the <Video> HTML tags
 
         Args:
@@ -94,8 +94,8 @@ class DownloadManager(SessionHandler):
             file.write(await video_response.content.read())
 
         return outpath
-    
-def remove_protocol_prefixes(url: str) -> str:
-    """Pattern to match 'http://', 'https://', and 'www.' at the start of the string"""
-    pattern = r'^(https?://)?(www\.)?'
-    return re.sub(pattern, '', url)
+   
+    def remove_protocol_prefixes(self, url: str) -> str:
+        """Removes 'http://', 'https://', and 'www.' from the start of the string"""
+        pattern = r'^(https?://)?(www\.)?'
+        return re.sub(pattern, '', url)
