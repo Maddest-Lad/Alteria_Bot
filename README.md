@@ -26,7 +26,7 @@ Alteria is a Discord bot developed using the Pycord library, integrating various
 * User Management: Manages user data and interactions.
 * Utilities: Includes functions like OCR.
 
-### System Initialization
+## System Initialization
 * The bot is initialized using the Pycord library.
 * Separate aiohttp session handlers are used for different modules.
 
