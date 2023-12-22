@@ -1,10 +1,15 @@
 import json
 import os
+import re
+from random import choice
 from datetime import datetime
 from pathlib import Path
-import aiopytesseract
 
-from Modules.constants import LOG_DIRECTORY
+import aiopytesseract
+import markovify
+
+from Modules.constants import LOG_DIRECTORY, NOUNS, VERBS, ADVERBS, ADJECTIVES, PROMPTS
+
 
 def log(*value):
     """Logs Value To Local JSON File"""
@@ -23,3 +28,22 @@ def chunk_by(text: str, chunk_size: int):
 async def optical_character_recognition(image_path: Path) -> str:
     """Uses Optical Character Recognition (OCR) to extract text from an Image"""
     return await aiopytesseract.image_to_string(str(image_path))
+
+
+# Experiments For Stable Diffusion / LLM Prompt Refinement
+def generate_random_prompt() -> str:
+    """ Returns a random sentence in the format of (Adjective, Noun, Verb, Adverb)"""
+    return f"{choice(ADJECTIVES)} {choice(NOUNS)} {choice(VERBS)} {choice(ADVERBS)}"
+
+def text_cleaner(text):
+    text = re.sub(r'--', ' ', text)
+    text = re.sub('[\[].*?[\]]', '', text)
+    text = re.sub(r'(\b|\s+\-?|^\-?)(\d+|\d*\.\d+)\b', '', text)
+    text = re.sub(r"http\S+", "", text)
+    text = ' '.join(text.split())
+    return text
+
+text_model = markovify.Text(text_cleaner(PROMPTS))
+
+def generate_prompt_markov() -> str:
+    return text_model.make_sentence()

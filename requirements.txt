@@ -12,6 +12,7 @@ charset-normalizer
 ffmpeg-python
 frozenlist
 idna
+markovify
 multidict
 numpy
 pillow

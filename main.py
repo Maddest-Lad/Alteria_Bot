@@ -15,7 +15,7 @@ from Modules.text_generation import TextGenerator
 from Modules.stable_diffusion import StableDiffusion
 from Modules.download_manager import DownloadManager
 from Modules.user import User
-from Modules.utils import optical_character_recognition
+from Modules.utils import optical_character_recognition, generate_random_prompt, generate_prompt_markov
 from Modules.discord_utils import set_bot_status, set_moon_phase_status
 
 # Initialize Bot
@@ -41,24 +41,50 @@ async def download(ctx: ApplicationContext, url: Option(str, "url to download"))
 @bot.slash_command(guilds=SCOPE, description="Generates an Image with Stable Diffusion")
 async def generate(ctx: ApplicationContext,
                    prompt: Option(str, "The prompt for the image, if left empty it will be automatically generated", required=False, default=None),
-                   auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=True),
+                   auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False),
                    images_to_generate: Option(int, "The number of images to generate", required=False,  default=1)):
-    """Generates an Image with Stable Diffusion"""
+    """Generates an Semi Random Image with Stable Diffusion"""
     await ctx.defer()
 
     # Generation Loop
     for _ in range(0, images_to_generate):
-        if not prompt:
-            image_prompt = random.choice(NOUNS)
 
         if auto_improve_prompt:
-            image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : image_prompt}))
-            image_prompt = image_prompt.replace("!", "").replace("|", ",").replace("_", " ")
+            image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : prompt}))
+        
+        file = await stable_diffusion.generate_image(prompt=image_prompt)
+
+        if auto_improve_prompt:
+            response = f"**Base Prompt**:```{prompt}```**Final Prompt**:```{image_prompt}```"
+        else:
+            response = f"**Prompt**:```{image_prompt}```"
+
+        await ctx.followup.send(response, file=discord.File(file))
+
+    if images_to_generate > 1:
+        await ctx.followup.send("All Images Generated")
+
+@bot.slash_command(guilds=SCOPE, description="Generates an Image with Stable Diffusion")
+async def generate_random_images(ctx: ApplicationContext,
+                   auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=True),
+                   images_to_generate: Option(int, "The number of images to generate", required=False,  default=1)):
+    """Generates an Semi Random Image with Stable Diffusion"""
+    await ctx.defer()
+
+    # Generation Loop
+    for _ in range(0, images_to_generate):
+
+        random_prompt = generate_random_prompt() if random.getrandbits(1) else generate_prompt_markov()
+
+        if auto_improve_prompt:
+            image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : random_prompt}))
 
         file = await stable_diffusion.generate_image(prompt=image_prompt)
-        await ctx.followup.send(f"**Prompt**:```{image_prompt}```", file=discord.File(file))
+        
+        response = f"**Semi-Random Base Prompt**:```{random_prompt}```**Final Prompt**:```{image_prompt}```"
+        
+        await ctx.followup.send(response, file=discord.File(file))
 
-    # Send Final Message if There Were More Than One Images
     if images_to_generate > 1:
         await ctx.followup.send("All Images Generated")
 
