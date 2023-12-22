@@ -66,7 +66,7 @@ async def generate(ctx: ApplicationContext,
     if images_to_generate > 1:
         await ctx.followup.send("All Images Generated")
 
-@bot.slash_command(guilds=SCOPE, description="Generates an Image with Stable Diffusion")
+@bot.slash_command(guilds=SCOPE, description="Generates a Random Image with Stable Diffusion")
 async def generate_random_images(ctx: ApplicationContext,
                    auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=True),
                    images_to_generate: Option(int, "The number of images to generate", required=False,  default=1)):
@@ -75,11 +75,18 @@ async def generate_random_images(ctx: ApplicationContext,
 
     # Generation Loop
     for _ in range(0, images_to_generate):
-
-        random_prompt = generate_random_prompt() if random.getrandbits(1) else generate_prompt_markov()
+        
+        random_prompt = None
+        while not random_prompt:
+            random_prompt = generate_random_prompt() if random.getrandbits(1) else generate_prompt_markov()
 
         if auto_improve_prompt:
             image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : random_prompt}))
+        else:
+            image_prompt = random_prompt
+
+        if random.getrandbits(1):
+            image_prompt = await text_generator.generate_instruct_response(message=EMOJI_PROMPT_TEMPLATE.substitute({'Prompt' : image_prompt}))
 
         file = await stable_diffusion.generate_image(prompt=image_prompt)
         

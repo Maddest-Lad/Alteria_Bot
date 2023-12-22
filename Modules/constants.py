@@ -19,8 +19,9 @@ ADJECTIVES = open(WORDLIST_DIRECTORY / "adjectives.txt", 'r').read().split("\n")
 PROMPTS = open(WORDLIST_DIRECTORY / "75000 prompts.txt", 'r').read()
 
 # Text Generation
-IMPROVE_PROMPT_TEMPLATE = Template(open("Resources/improve_prompt_template.txt").read())
-NEW_PROMPT_TEMPLATE = Template(open("Resources/new_prompt_template.txt").read())
+IMPROVE_PROMPT_TEMPLATE = Template(open(RESOURCE_DIRECTORY / "improve_prompt_template.txt").read())
+NEW_PROMPT_TEMPLATE = Template(open(RESOURCE_DIRECTORY / "new_prompt_template.txt").read())
+EMOJI_PROMPT_TEMPLATE = Template(open(RESOURCE_DIRECTORY / "improve_prompt_template.txt").read())
 
 # Stable Diffusion
 NSFW_FILTER_LIST = open("Resources/NSFW_filter.txt").read().split("\n")
