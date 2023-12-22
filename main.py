@@ -40,7 +40,7 @@ async def download(ctx: ApplicationContext, url: Option(str, "url to download"))
 
 @bot.slash_command(guilds=SCOPE, description="Generates an Image with Stable Diffusion")
 async def generate(ctx: ApplicationContext,
-                   prompt: Option(str, "The prompt for the image, if left empty it will be automatically generated", required=False, default=None),
+                   prompt: Option(str, "The prompt for the image, if left empty it will be automatically generated", required=True, default=None),
                    auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False),
                    images_to_generate: Option(int, "The number of images to generate", required=False,  default=1)):
     """Generates an Semi Random Image with Stable Diffusion"""
@@ -51,7 +51,9 @@ async def generate(ctx: ApplicationContext,
 
         if auto_improve_prompt:
             image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : prompt}))
-        
+        else:
+            image_prompt = prompt
+
         file = await stable_diffusion.generate_image(prompt=image_prompt)
 
         if auto_improve_prompt:
