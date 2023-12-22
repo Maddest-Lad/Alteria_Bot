@@ -2,8 +2,11 @@ import decimal
 import datetime
 from random import getrandbits, choice
 from discord import Activity, ActivityType, Game, Bot
-from Modules.constants import STATUS_WATCHING, STATUS_PLAYING 
 
+# Constants
+SARCASTIC_RESPONSES = ["Sure thing", "Absolutely", "Indubitably", "No problemo", "You got it", "Consider it done", "By all means", "Sure thing boss", "I'm on it", "On it like a car bonnet", "Right away", "Righto", "My pleasure", "Glad to help", "Of course", "My apologies, how can I serve you today My Lord", "As you command", "At your service", "Gotcha", "Yep", "Yessir", "You got it boss", "As you wish", "As you will it My Lord", "I'm all over it", "Got it covered", "Don't mention it", "It's my pleasure", "I'm here for you", "I'm all ears", "Say no more", "I got this"]
+STATUS_PLAYING = ["with my emotions", "hide-and-seek", "with fire", "hard to get", "", "it cool", "dumb", "games", "catch up", "hooky", "favorites", "fast and loose", "dirty", "minecraft", "the victim", "mind games", "second fiddle", "the long game", "the fool", "for time", "the blame game", "the odds", "it by ear", "with fate"]
+STATUS_WATCHING = ["cat videos", "ants march", "eggs hatch", "stars twinkle", "noodles dance", "cheese age", "plants drink", "ice melt", "spiders web", "turtles sprint", "rain fall", "otters float", "sand shift", "clouds race", "rocks erode", "snails speed", "paint dry", "toast"]
 
 async def clear_bot_status(bot: Bot):
     """Clears the Bot's Status"""
@@ -23,11 +26,11 @@ LUNATION_CONSTANT = decimal.Decimal("0.20439731")
 LUNATION_MULTIPLIER = decimal.Decimal("0.03386319269")
 PHASES = [
     ("New Moon", "🌑"), 
-    ("Waxing Crescent", "🌒"), 
-    ("First Quarter", "🌓"), 
-    ("Waxing Gibbous", "🌔"), 
+    ("Waxing Crescent", "🌒"),
+    ("First Quarter", "🌓"),
+    ("Waxing Gibbous", "🌔"),
     ("Full Moon", "🌕"),
-    ("Waning Gibbous", "🌖"), 
+    ("Waning Gibbous", "🌖"),
     ("Last Quarter", "🌗"),
     ("Waning Crescent", "🌘")
 ]

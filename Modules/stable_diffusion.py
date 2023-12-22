@@ -5,13 +5,16 @@ import uuid
 
 from PIL import Image
 
-from Modules.constants import SD_BASE_NEGATIVE_PROMPT, SD_IMAGE_PATH
+from Modules.constants import MEDIA_DIRECTORY
 from Modules.session_handler import SessionHandler
 
 # Constants
 API_URL = "http://localhost:5002"
 INTERROGATE_ENDPOINT = f"{API_URL}/sdapi/v1/interrogate"
 TEXT_TO_IMG_ENDPOINT = f"{API_URL}/sdapi/v1/txt2img"
+SD_IMAGE_PATH =  MEDIA_DIRECTORY / "StableDiffusion"
+SD_BASE_NEGATIVE_PROMPT = "bad-anime-horror bad_prompt_version2 verybadimagenegative_v1.3 negative_hand-neg <lora:EasyFix:0.5>"
+SD_BASE_POSITIVE_PROMPT = "[[anime, anime style, Japanese animation, flat colors]] "
 
 class StableDiffusion(SessionHandler):
     """Class for generating and analyzing images using stable diffusion"""       
@@ -63,13 +66,13 @@ class StableDiffusion(SessionHandler):
             "height" : 1296,
             "width" : 1024,
             "hr_negative_prompt" : SD_BASE_NEGATIVE_PROMPT,
-            "hr_prompt" : prompt,
+            "hr_prompt" : SD_BASE_POSITIVE_PROMPT + prompt,
             "hr_scale" : 1.5,
             "hr_second_pass_steps" : 10,
             "hr_upscaler" : "None",
             "n_iter" : 1,
             "negative_prompt" : SD_BASE_NEGATIVE_PROMPT,
-            "prompt" : prompt,
+            "prompt" : SD_BASE_POSITIVE_PROMPT + prompt,
             "restore_faces" : False,
             "sampler_name" : "Euler a",
             "steps" : 15,

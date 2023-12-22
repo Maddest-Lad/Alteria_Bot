@@ -41,32 +41,24 @@ async def download(ctx: ApplicationContext, url: Option(str, "url to download"))
 @bot.slash_command(guilds=SCOPE, description="Generates an Image with Stable Diffusion")
 async def generate(ctx: ApplicationContext,
                    prompt: Option(str, "The prompt for the image, if left empty it will be automatically generated", required=False, default=None),
-                   auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=False),
-                   images_to_generate: Option(int, "The number of images to generate", required=False,  default=1),
-                   noun: Option(str, "Base Guidance", required=False, default=None)):
+                   auto_improve_prompt: Option(bool, "Whether to improve the prompt with a language model", required=False,  default=True),
+                   images_to_generate: Option(int, "The number of images to generate", required=False,  default=1)):
     """Generates an Image with Stable Diffusion"""
     await ctx.defer()
 
-    flag = not noun
-
     # Generation Loop
     for _ in range(0, images_to_generate):
-        if flag:
-            noun = random.choice(NOUNS)
-
-        if prompt:
-            image_prompt = prompt
-        else:
-            image_prompt = await text_generator.generate_instruct_response(message=NEW_PROMPT_TEMPLATE.substitute({'Noun' : noun }))
+        if not prompt:
+            image_prompt = random.choice(NOUNS)
 
         if auto_improve_prompt:
             image_prompt = await text_generator.generate_instruct_response(message=IMPROVE_PROMPT_TEMPLATE.substitute({'Prompt' : image_prompt}))
-
-        image_prompt = image_prompt.replace("!", "").replace("|", ",").replace("_", " ")
+            image_prompt = image_prompt.replace("!", "").replace("|", ",").replace("_", " ")
 
         file = await stable_diffusion.generate_image(prompt=image_prompt)
         await ctx.followup.send(f"**Prompt**:```{image_prompt}```", file=discord.File(file))
 
+    # Send Final Message if There Were More Than One Images
     if images_to_generate > 1:
         await ctx.followup.send("All Images Generated")
 
