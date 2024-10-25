@@ -8,7 +8,7 @@ CHAT_ENDPOINT = f"{API_URL}/v1/chat/completions"
 INSTRUCT_ENDPOINT = f"{API_URL}/v1/completions"
 HEADERS = {"Content-Type": "application/json"}
 SHARED_PARAMS = {
-  "max_tokens": 512,
+  "max_tokens": 2048,
   "presence_penalty": 0,
   "temperature": 0.7,
   "top_p": 0.1,
@@ -38,6 +38,10 @@ SHARED_PARAMS = {
   "ban_eos_token": False,
   "add_bos_token": True,
   "skip_special_tokens": True,
+  "stop" : [
+        "---",
+        "\n"
+  ]
 }
 
 class TextGenerator(SessionHandler):

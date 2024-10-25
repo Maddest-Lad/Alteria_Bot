@@ -13,8 +13,8 @@ API_URL = "http://localhost:5002"
 INTERROGATE_ENDPOINT = f"{API_URL}/sdapi/v1/interrogate"
 TEXT_TO_IMG_ENDPOINT = f"{API_URL}/sdapi/v1/txt2img"
 SD_IMAGE_PATH =  MEDIA_DIRECTORY / "StableDiffusion"
-SD_BASE_NEGATIVE_PROMPT = "bad-anime-horror bad_prompt_version2 verybadimagenegative_v1.3 negative_hand-neg <lora:EasyFix:0.5>, young, child, illegal "
-SD_BASE_POSITIVE_PROMPT = "[[[[anime, anime style, flat colors]]]] "
+SD_BASE_NEGATIVE_PROMPT = "[[bad anatomy, missing limbs, ugly, duplicate, morbid, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, out of frame, username, watermark, signature, young, child, illegal]]"
+SD_BASE_POSITIVE_PROMPT = "<lora:add-detail-xl:1>"
 
 class StableDiffusion(SessionHandler):
     """Class for generating and analyzing images using stable diffusion"""       
@@ -59,11 +59,11 @@ class StableDiffusion(SessionHandler):
             prompt = prompt[:1800]
       
         data = {
-            "cfg_scale" : 6,
+            "cfg_scale" : 6.5,
             "denoising_strength" : 0.8,
             "disable_extra_networks" : False,
             "enable_hr" : False,
-            "height" : 1296,
+            "height" : 1280,
             "width" : 1024,
             "hr_negative_prompt" : SD_BASE_NEGATIVE_PROMPT,
             "hr_prompt" : SD_BASE_POSITIVE_PROMPT + prompt,
@@ -75,7 +75,7 @@ class StableDiffusion(SessionHandler):
             "prompt" : SD_BASE_POSITIVE_PROMPT + prompt,
             "restore_faces" : False,
             "sampler_name" : "Euler a",
-            "steps" : 15,
+            "steps" : 26,
         }
 
         response_dict = await self._make_post_request(TEXT_TO_IMG_ENDPOINT, data=data)

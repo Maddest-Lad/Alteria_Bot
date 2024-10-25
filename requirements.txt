@@ -24,3 +24,4 @@ urllib3
 wget
 yarl
 youtube_transcript_api
+mcrcon
